@@ -1,3 +1,3 @@
-# Belgisch Staatsblad/Moniteur Belge
-Small pet project for playing around with [belgisch staatsblad/moniteur belge](https://www.ejustice.just.fgov.be/cgi_tsv_pub/welcome.pl?language=nl).
+# Belgian Official Journal
+Small pet project for playing around with [Belgian official journal](https://www.ejustice.just.fgov.be/cgi_tsv_pub/welcome.pl) (AKA Belgisch Staatsblad/Moniteur Belge).
 
