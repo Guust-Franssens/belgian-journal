@@ -3,11 +3,15 @@ scrapes legal entities from the following web page:
 https://www.ejustice.just.fgov.be/cgi_tsv/rech.pl
 """
 
+import re
 from datetime import date
+from pathlib import Path
 from typing import Iterable, Optional
 
 import scrapy
 from scrapy.http import Request, Response
+
+from src.items import LegalEntityItem
 
 # list of company numbers (VAT number minus BE) to scrape
 LEGAL_ENTITIES = [
@@ -117,14 +121,68 @@ class LegalEntitySpider(scrapy.Spider):
 
         else:  # fetched all publication elements
             publication_elements += response.meta.get("publication_elements", [])
-            self.logger.info(f"Found {len(publication_elements)} for vat: {response.meta.get('ben')}")
+            self.logger.info(f"Found {len(publication_elements)} for vat: {response.meta.get('vat')}")
             yield from self.parse_publications(publication_elements, response.meta)
 
-    def parse_publications(self, publication_elements: scrapy.selector.unified.SelectorList, meta: dict):
+    def parse_publications(self, publication_elements: scrapy.selector.unified.SelectorList, meta: dict) -> Iterable:
         """Creates a scrapy ItemLoader such that the PDFs get downloaded
         This method gets called multiple times, once per act that contains pdfs
 
         :param publication_elements: all publication elements found for the legal entity for the given filters
         :param meta: response.meta from previous request
         """
-        raise NotImplementedError
+
+        for publication_element in publication_elements:
+            pdf_relative_url = publication_element.xpath("./div/a/font/a/@href").get()
+
+            # sometimes a publication link is a reference to another publication (do not scrape these)
+            if not pdf_relative_url or not pdf_relative_url.endswith(".pdf"):
+                continue
+
+            # fetch metadata from the publication element
+            pdf_absolute_url = self.base_url + pdf_relative_url
+            pubid = Path(pdf_relative_url)
+            company_name = publication_element.xpath("./div/p/font/text()")
+            company_juridical_form = ("".join(publication_element.xpath("./div/p/text()").getall())).strip()
+            address, vat, act_description, pub_date_and_number = (
+                item.strip() for item in publication_element.xpath("./div/a/text()").getall() if item.strip()
+            )
+            address_matched = re.match(r"^(?P<street>[\w\W]*)\s{1}(?P<zipcode>\d{4})\s{1}(?P<city>[\w\W]*)$", address)
+            if address_matched:
+                street = address_matched.group("street")
+                zipcode = address_matched.group("zipcode")
+                city = address_matched.group("city")
+            else:
+                self.logger.warning(f"Could not extract street, zipcode and city from address: '{address}'")
+                street = zipcode = city = ""
+
+            publication_matched = re.match(r"^(?P<date>\d{4}-\d{2}-\d{2})\s/\s(?P<number>\d{7})$", pub_date_and_number)
+            if publication_matched:
+                publication_date = publication_matched.group("date")
+                publication_number = publication_matched.group("number")
+            else:
+                self.logger.warning(f"Could not extract publication date and number from: '{pub_date_and_number}'")
+
+            publication_meta = {
+                "vat": meta["vat"],
+                "pubid": pubid,  # last two digits of publication date year + publication number
+                "type_of_act": meta["act"],
+                "act_description": act_description,
+                "company_name": company_name,
+                "company_juridical_form": company_juridical_form,
+                "address": address,
+                "street": street,
+                "zipcode": zipcode,
+                "city": city,
+                "publication_date": publication_date,
+                "publication_number": publication_number,
+                "publication_link": pdf_absolute_url,
+            }
+            item = LegalEntityItem(
+                vat=meta["vat"],
+                publication_id=pubid,
+                publication_date=publication_date,
+                publication_meta=publication_meta,
+                file_url=pdf_absolute_url,
+            )
+            yield item
