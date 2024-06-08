@@ -6,7 +6,7 @@ https://www.ejustice.just.fgov.be/cgi_tsv/rech.pl
 import re
 from datetime import date
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Tuple
 
 import scrapy
 from scrapy.http import Request, Response
@@ -144,24 +144,11 @@ class LegalEntitySpider(scrapy.Spider):
             pubid = Path(pdf_relative_url)
             company_name = publication_element.xpath("./div/p/font/text()")
             company_juridical_form = ("".join(publication_element.xpath("./div/p/text()").getall())).strip()
-            address, vat, act_description, pub_date_and_number = (
-                item.strip() for item in publication_element.xpath("./div/a/text()").getall() if item.strip()
-            )
-            address_matched = re.match(r"^(?P<street>[\w\W]*)\s{1}(?P<zipcode>\d{4})\s{1}(?P<city>[\w\W]*)$", address)
-            if address_matched:
-                street = address_matched.group("street")
-                zipcode = address_matched.group("zipcode")
-                city = address_matched.group("city")
-            else:
-                self.logger.warning(f"Could not extract street, zipcode and city from address: '{address}'")
-                street = zipcode = city = ""
+            pub_metadata = [i.strip() for i in publication_element.xpath("./div/a/text()").getall() if i.strip()]
 
-            publication_matched = re.match(r"^(?P<date>\d{4}-\d{2}-\d{2})\s/\s(?P<number>\d{7})$", pub_date_and_number)
-            if publication_matched:
-                publication_date = publication_matched.group("date")
-                publication_number = publication_matched.group("number")
-            else:
-                self.logger.warning(f"Could not extract publication date and number from: '{pub_date_and_number}'")
+            address, vat, act_description, pub_date_and_number = self.parse_metadata(pub_metadata)
+            city, zipcode, street = self.extract_address(address)
+            publication_date, publication_number = self.extract_publication_date_and_number(pub_date_and_number)
 
             publication_meta = {
                 "vat": meta["vat"],
@@ -186,3 +173,71 @@ class LegalEntitySpider(scrapy.Spider):
                 file_url=pdf_absolute_url,
             )
             yield item
+
+    def parse_metadata(self, pub_metadata: list[str]) -> Tuple[str, str, str, str]:
+        """parses the metadata section in the publication element
+
+        :param pub_metadata: metadata section in publication element
+        :return: address, vat, act_description and pub_date_and_number
+
+        example standard format:
+        https://www.ejustice.just.fgov.be/cgi_tsv/rech_res.pl?btw=0736812790&pdd=2020-03-16&pdf=2020-03-16
+
+        example no address and act format:
+        https://www.ejustice.just.fgov.be/cgi_tsv/rech_res.pl?btw=1009987358&pdd=2024-06-05&pdf=2024-06-05
+        (can be outdated - new publications / new companies are sometimes missing it but gets corrected)
+        """
+        if len(pub_metadata) == 4:
+            self.logger.debug("Metadata section of publication is in standard format.")
+            address, vat, act_description, pub_date_and_number = pub_metadata
+        elif len(pub_metadata) == 2:
+            self.logger.debug("Metadata section of publication is in standard format.")
+            vat, pub_date_and_number = pub_metadata
+            address = vat = ""
+        else:
+            self.logger.warning(f"Unimplemented metadata format: {pub_metadata}")
+            address = vat = act_description = pub_date_and_number = ""
+
+        return address, vat, act_description, pub_date_and_number
+
+    def extract_address(self, address: str) -> Tuple[str, str, str]:
+        """extracts the city, zipcode and street from the address metadata section
+
+        :param address: address metadata
+        :return: city, zipcode and street
+
+        standard address structure:
+        RUE JACQUES JORDAENS 32A, BTE6 1000 BRUXELLES
+        """
+        if not address:
+            self.logger.debug("Address was blank, could not extract city, zipcode, street")
+            return "", "", ""
+
+        address_matched = re.match(r"^(?P<street>.*)\s(?P<zipcode>\d{4})\s(?P<city>.*)$", address)
+        if address_matched:
+            street = address_matched.group("street")
+            zipcode = address_matched.group("zipcode")
+            city = address_matched.group("city")
+        else:
+            self.logger.warning(f"Could not extract street, zipcode and city from address: '{address}'")
+            street = zipcode = city = ""
+
+        return city, zipcode, street
+
+    def extract_publication_date_and_number(self, pub_date_and_number: str) -> Tuple[str, str]:
+        """extracts the publication date and number
+
+        :param pub_date_and_number: combined date and number
+        :return: publication_date, publication_number
+
+        example pub_date_and_number:
+        "2024-06-05 / 0402585"
+        """
+        publication_matched = re.match(r"^(?P<date>\d{4}-\d{2}-\d{2})\s/\s(?P<number>\d{7})$", pub_date_and_number)
+        if publication_matched:
+            publication_date = publication_matched.group("date")
+            publication_number = publication_matched.group("number")
+        else:
+            self.logger.warning(f"Could not extract publication date and number from: '{pub_date_and_number}'")
+            publication_date = publication_number = ""
+        return publication_date, publication_number
