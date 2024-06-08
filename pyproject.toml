@@ -186,7 +186,9 @@ disable = [
     "suppressed-message",
     "useless-suppression",
     "deprecated-pragma",
-    "use-symbolic-message-instead"
+    "use-symbolic-message-instead",
+    "missing-class-docstring",
+    "missing-module-docstring"
 ]
 
 enable = ["c-extension-no-member"]
