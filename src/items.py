@@ -11,5 +11,5 @@ class LegalEntityItem(scrapy.Item):
     publication_id = scrapy.Field()  # id of the publication
     publication_date = scrapy.Field()  # date when publication was posted
     publication_meta = scrapy.Field()  # metadata of the publication
-    file_url = scrapy.Field()  # single URL
+    file_urls = scrapy.Field()  # single URL
     files = scrapy.Field()  # Metadata bout the downloaded file

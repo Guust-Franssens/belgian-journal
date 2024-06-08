@@ -105,7 +105,7 @@ class LegalEntitySpider(scrapy.Spider):
             return None
 
         # list of publication elements per legal entity per act
-        publication_elements = response.xpath("/html/body/div/div[4]/div/main/div[2]/div/div[*]").getall()
+        publication_elements = response.xpath("/html/body/div/div[4]/div/main/div[2]/div/div[*]")
 
         if len(publication_elements) == 100:  # max number of publication elements on a page
             meta = response.meta
@@ -141,7 +141,7 @@ class LegalEntitySpider(scrapy.Spider):
 
             # fetch metadata from the publication element
             pdf_absolute_url = self.base_url + pdf_relative_url
-            pubid = Path(pdf_relative_url)
+            pubid = Path(pdf_relative_url).name
             company_name = publication_element.xpath("./div/p/font/text()")
             company_juridical_form = ("".join(publication_element.xpath("./div/p/text()").getall())).strip()
             pub_metadata = [i.strip() for i in publication_element.xpath("./div/a/text()").getall() if i.strip()]
@@ -170,7 +170,7 @@ class LegalEntitySpider(scrapy.Spider):
                 publication_id=pubid,
                 publication_date=publication_date,
                 publication_meta=publication_meta,
-                file_url=pdf_absolute_url,
+                file_urls=[pdf_absolute_url],
             )
             yield item
 
@@ -233,7 +233,7 @@ class LegalEntitySpider(scrapy.Spider):
         example pub_date_and_number:
         "2024-06-05 / 0402585"
         """
-        publication_matched = re.match(r"^(?P<date>\d{4}-\d{2}-\d{2})\s/\s(?P<number>\d{7})$", pub_date_and_number)
+        publication_matched = re.match(r"^(?P<date>\d{4}-\d{2}-\d{2})\s/\s(?P<number>\d{3,7})$", pub_date_and_number)
         if publication_matched:
             publication_date = publication_matched.group("date")
             publication_number = publication_matched.group("number")
