@@ -6,7 +6,12 @@
 #     https://docs.scrapy.org/en/latest/topics/settings.html
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BOT_NAME = "BelgianJournal"
 
@@ -97,3 +102,8 @@ LOG_LEVEL = "WARNING"
 ROOT_DIR = Path(__file__).parents[1]
 FILES_STORE = str(ROOT_DIR / "tmp_pdfs")
 CLEANUP_FILES_STORE = False
+
+# AZURE STORAGE SETTINGS
+AZURE_STORAGE_ACCOUNT_KEY = os.getenv("AZURE_STORAGE_ACCOUNT_KEY")
+AZURE_STORAGE_ACCOUNT_URL = os.getenv("AZURE_STORAGE_ACCOUNT_URL")
+AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")
