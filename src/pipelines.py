@@ -21,7 +21,7 @@ class LegalEntityPipeline(FilesPipeline):
         with FILES_STORE coming from the scrapy settings
         """
         # request.url ~= https://www.ejustice.just.fgov.be/tsv_pdf/2020/03/16/20039943.pdf
-        path = urlparse(request.url).path
+        path = urlparse(request.url).path.replace("/tsv_pdf", "")
         return path
 
     def item_completed(self, results, item, info): ...

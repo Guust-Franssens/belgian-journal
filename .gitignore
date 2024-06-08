@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# temp output from scraping
+tmp_pdfs
+
 # vscode
 .vscode/
 

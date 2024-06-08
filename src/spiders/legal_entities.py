@@ -3,6 +3,7 @@ scrapes legal entities from the following web page:
 https://www.ejustice.just.fgov.be/cgi_tsv/rech.pl
 """
 
+import json
 import re
 from datetime import date
 from pathlib import Path
@@ -10,8 +11,11 @@ from typing import Iterable, Optional, Tuple
 
 import scrapy
 from scrapy.http import Request, Response
+from scrapy.utils.project import get_project_settings
 
 from src.items import LegalEntityItem
+
+SETTINGS = get_project_settings()
 
 # list of company numbers (VAT number minus BE) to scrape
 LEGAL_ENTITIES = [
@@ -19,44 +23,14 @@ LEGAL_ENTITIES = [
     {"vat": "0463318421", "start_date": None, "end_date": None},  # NORRIQ Belgium
 ]
 
+with (SETTINGS["ROOT_DIR"] / "acts.json").open("r", encoding="utf-8") as f:
+    ACTS = json.load(f)
+
 
 class LegalEntitySpider(scrapy.Spider):
     name = "legal-entity"
     base_url = "https://www.ejustice.just.fgov.be"
-    acts = {
-        "": ("leeg", "vide"),
-        "c01": (
-            "rubriek oprichting (nieuwe rechtspersoon, opening bijkantoor, enz...)",
-            "rubrique constitution (nouvelle personne morale, ouverture succursale, etc...)",
-        ),
-        "c02": (
-            "rubriek einde (stopzetting, intrekking stopzetting, nietigheid, ger. ak., gerechtelijke reorganisatie, enz...)",
-            "rubrique fin (cessation, annulation cessation, nullité, conc, réorganisation judiciaire, etc...)",
-        ),
-        "c03": ("benaming", "dénomination"),
-        "c04": ("maatschappelijke zetel", "siège social"),
-        "c05": (
-            "adressen anders dan maatschappelijke zetel",
-            "adresse autre que siège social",
-        ),
-        "c06": ("doel", "objet"),
-        "c07": ("kapitaal - aandelen", "capital, actions"),
-        "c08": ("ontslagen - benoemingen", "démissions, nominations"),
-        "c09": ("algemene vergadering", "assemblée générale"),
-        "c10": ("boekjaar", "année comptable"),
-        "c11": (
-            "statuten (vertaling, coördinatie, overige wijzigingen, enz...)",
-            "Statuts (traduction, coordination, autres modifications)",
-        ),
-        "c12": ("wijziging rechtsvorm", "modification forme juridique"),
-        "c13": (
-            "rubriek herstructurering (fusie, splitsing, overdracht vermogen, enz...)",
-            "rubrique restructuration  (fusion, scission, transfert patrimoine, etc...)",
-        ),
-        "c14": ("jaarrekeningen", "comptes annuels"),
-        "c15": ("diversen", "divers"),
-        "c16": ("ambtshalve doorhaling  KBO nr.", "radiation d'office n° BCE"),
-    }
+    acts = ACTS
 
     def start_requests(self) -> Iterable[Request]:
         """starting point for the scraper
