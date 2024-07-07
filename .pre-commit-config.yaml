@@ -12,3 +12,4 @@ repos:
   hooks:
     - id: check-toml
     - id: check-added-large-files
+      exclude: ^documentation/
