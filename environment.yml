@@ -1,84 +1,15 @@
-name: mb
 channels:
   - defaults
   - conda-forge
 dependencies:
-  - _libgcc_mutex=0.1
-  - _openmp_mutex=5.1
-  - appdirs=1.4.4
-  - attrs=23.1.0
-  - automat=20.2.0
-  - bcrypt=3.2.0
-  - blas=1.0
-  - bottleneck=1.3.7
-  - brotli-python=1.0.9
-  - bzip2=1.0.8
-  - ca-certificates=2024.3.11
-  - certifi=2024.2.2
-  - cffi=1.16.0
-  - charset-normalizer=2.0.4
-  - constantly=23.10.4
-  - cryptography=42.0.5
-  - cssselect=1.2.0
-  - filelock=3.13.1
-  - hyperlink=21.0.0
-  - icu=73.1
-  - idna=3.7
-  - incremental=22.10.0
-  - itemadapter=0.3.0
-  - itemloaders=1.1.0
-  - jmespath=1.0.1
-  - ld_impl_linux-64=2.38
-  - libffi=3.4.4
-  - libgcc-ng=11.2.0
-  - libgfortran-ng=11.2.0
-  - libgfortran5=11.2.0
-  - libgomp=11.2.0
-  - libopenblas=0.3.21
-  - libstdcxx-ng=11.2.0
-  - libuuid=1.41.5
-  - libxml2=2.10.4
-  - libxslt=1.1.37
-  - lxml=5.2.1
-  - ncurses=6.4
-  - numexpr=2.8.7
-  - numpy=1.26.4
-  - numpy-base=1.26.4
-  - openssl=3.0.13
-  - packaging=23.2
-  - pandas=2.2.1
-  - parsel=1.8.1
-  - pip=24.0
-  - protego=0.1.16
-  - pyasn1=0.4.8
-  - pyasn1-modules=0.2.8
-  - pycparser=2.21
-  - pydispatcher=2.0.5
-  - pyopenssl=24.0.0
-  - pysocks=1.7.1
+  - pip
   - python=3.11.9
-  - python-dateutil=2.9.0post0
-  - python-tzdata=2023.3
-  - pytz=2024.1
-  - queuelib=1.6.2
-  - readline=8.2
-  - requests=2.32.2
-  - requests-file=1.5.1
-  - scrapy=2.11.1
-  - service_identity=18.1.0
-  - setuptools=69.5.1
-  - six=1.16.0
-  - sqlite=3.45.3
-  - tk=8.6.14
-  - tldextract=3.2.0
-  - twisted=23.10.0
-  - typing_extensions=4.11.0
-  - tzdata=2024a
-  - urllib3=2.2.1
-  - w3lib=2.1.2
-  - wheel=0.43.0
-  - xz=5.4.6
-  - zlib=1.2.13
-  - zope=1.0
-  - zope.interface=5.4.0
-prefix: /home/azureuser/miniforge3/envs/mb
+  - scrapy=2.11
+  - python-dotenv=1.0
+  - pillow=10.3
+  - pip:
+    - azure-ai-formrecognizer==3.3.*
+    - azureml-core==1.56.*
+    - azure-storage-blob==12.20.*
+    - pymupdf==1.24.*
+    # - openai==1.35.*

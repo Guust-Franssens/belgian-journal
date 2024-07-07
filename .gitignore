@@ -6,6 +6,12 @@ __pycache__/
 # C extensions
 *.so
 
+# temp output from scraping
+tmp_pdfs
+
+# vscode
+.vscode/
+
 # Distribution / packaging
 .Python
 build/
@@ -76,6 +82,7 @@ docs/_build/
 target/
 
 # Jupyter Notebook
+notebooks/
 .ipynb_checkpoints
 
 # IPython
@@ -113,6 +120,11 @@ ipython_config.py
 
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
 __pypackages__/
+
+# Azure stuff
+.amlignore*
+.gitignore.swp
+.ipynb_aml_checkpoints/
 
 # Celery stuff
 celerybeat-schedule
