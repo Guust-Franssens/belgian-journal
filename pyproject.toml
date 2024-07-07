@@ -191,7 +191,9 @@ disable = [
     "deprecated-pragma",
     "use-symbolic-message-instead",
     "missing-class-docstring",
-    "missing-module-docstring"
+    "missing-module-docstring",
+    "import-error",
+    "no-name-in-module"
 ]
 
 enable = ["c-extension-no-member"]

@@ -18,6 +18,7 @@ SETTINGS = get_project_settings()
 AZURE_STORAGE_ACCOUNT_URL = SETTINGS["AZURE_STORAGE_ACCOUNT_URL"]
 AZURE_STORAGE_ACCOUNT_KEY = SETTINGS["AZURE_STORAGE_ACCOUNT_KEY"]
 AZURE_CONTAINER_NAME = SETTINGS["AZURE_CONTAINER_NAME"]
+PUB_DATE_THRESHOLD = SETTINGS["PUB_DATE_THRESHOLD"]
 
 # Azure info is used a lot (per putting a BLOB once)
 azurelogger = logging.getLogger("azure")
@@ -62,7 +63,7 @@ class LegalEntityPipeline(FilesPipeline):
             / str(pub_date.year)
             / str(pub_date.month)
             / str(pub_date.day)
-            / f"{item['publication_meta']['pubid']}.json"
+            / f"{item['publication_meta']['publication_number']}.json"
         )
 
         blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=meta_path)

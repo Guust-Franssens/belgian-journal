@@ -7,6 +7,7 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 import os
+from datetime import date
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -98,7 +99,7 @@ REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
 
-LOG_LEVEL = "WARNING"
+LOG_LEVEL = "INFO"
 ROOT_DIR = Path(__file__).parents[1]
 FILES_STORE = str(ROOT_DIR / "tmp_pdfs")
 CLEANUP_FILES_STORE = False
@@ -107,3 +108,6 @@ CLEANUP_FILES_STORE = False
 AZURE_STORAGE_ACCOUNT_KEY = os.getenv("AZURE_STORAGE_ACCOUNT_KEY")
 AZURE_STORAGE_ACCOUNT_URL = os.getenv("AZURE_STORAGE_ACCOUNT_URL")
 AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")
+
+# PUBLICATION_DATE_THRESHOLD (do not consider publications before this date)
+PUB_DATE_THRESHOLD = date(2010, 1, 1)

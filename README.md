@@ -8,3 +8,8 @@ Small pet project for playing around with [Belgian official journal](https://www
 
 ## Running the project
 Activate the virtual environment and then run `scrapy crawl legal-entity-spider`.
+
+## Documentation
+There is additional documentation on this project for the following topics:
+- [scraping](documentation/scraping.md)
+- [OCR](documentation/ocr.md)

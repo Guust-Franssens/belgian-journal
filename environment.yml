@@ -4,8 +4,12 @@ channels:
 dependencies:
   - pip
   - python=3.11.9
-  - scrapy
-  - python-dotenv
+  - scrapy=2.11
+  - python-dotenv=1.0
+  - pillow=10.3
   - pip:
-    - azureml-core
-    - azure-storage-blob
+    - azure-ai-formrecognizer==3.3.*
+    - azureml-core==1.56.*
+    - azure-storage-blob==12.20.*
+    - pymupdf==1.24.*
+    # - openai==1.35.*
