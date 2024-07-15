@@ -13,3 +13,8 @@ Activate the virtual environment and then run `scrapy crawl legal-entity-spider`
 There is additional documentation on this project for the following topics:
 - [scraping](documentation/scraping.md)
 - [OCR](documentation/ocr.md)
+- [Text extraction](documentation/extract_text.md)
+
+
+## Visual overview
+![](documentation/resources/solution.png)

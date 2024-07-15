@@ -86,33 +86,35 @@ class LegalEntitySpider(scrapy.Spider):
         :param meta: response.meta from previous request
         """
         scraped = {Path(item).stem for item in self.container_client.list_blob_names(name_starts_with=meta["vat"])}
-        pub_date_threshold = self.settings["PUB_DATE_THRESHOLD"]
+        pub_date_threshold = meta["start_date"] or self.settings["PUB_DATE_THRESHOLD"]
 
         publication_elements: SelectorList = meta["publication_elements"]
         publications = []
         for i, publication_element in enumerate(publication_elements):
-            pdf_relative_url = publication_element.xpath("./div/a/font/a/@href").get()
-
-            # sometimes a publication link is a reference to another publication (do not scrape these)
-            if not pdf_relative_url or not pdf_relative_url.endswith(".pdf"):
-                self.logger.debug(f"Skipping non-pdf link for publication element {publication_element.get()}")
-                continue
-
             # fetch metadata from the publication element
-            pdf_absolute_url = self.base_url + pdf_relative_url
-            pubid = Path(pdf_relative_url).stem
+            urls = publication_element.xpath("./div//a/@href").getall()
+            pdf_relative_url, pdf_absolute_url, pubid = self.parse_publication_url(urls)
             company_name = publication_element.xpath("./div/p/font/text()").get()
-            company_juridical_form = ("".join(publication_element.xpath("./div/p/text()").getall())).strip()
-            pub_metadata = [i.strip() for i in publication_element.xpath("./div/a/text()").getall() if i.strip()]
+            company_juridical_form = publication_element.xpath("./div/p/text()[2]").get(default="").strip()
+            pub_metadata = [i.strip() for i in publication_element.xpath("./div/a[1]/text()").getall()]
 
             address, vat, act_description, pub_date_and_number = self.parse_metadata(pub_metadata)
             city, zipcode, street = self.extract_address(address)
             publication_date, publication_number = self.extract_publication_date_and_number(pub_date_and_number)
 
-            if publication_date and datetime.strptime(publication_date, "%Y-%m-%d").date() <= pub_date_threshold:
+            if publication_date and publication_date <= pub_date_threshold:
                 remaining = len(publication_elements) - (i + 1)
                 self.logger.info(f"Threshold date reached {pub_date_threshold}, skipping {remaining} pubs...")
                 break
+
+            if not pdf_relative_url:
+                url = (
+                    self.base_url + f"/cgi_tsv/rech_res.pl?btw={meta.get('vat')}"
+                    f"&pdd={publication_date if publication_date else ''}"
+                    f"&pdf={publication_date if publication_date else ''}"
+                )
+                self.logger.debug(f"Could not extract url from publication: {url}")
+                continue
 
             if publication_number in scraped:
                 self.logger.info(f"Already scraped {pdf_absolute_url}, skipping download...")
@@ -128,7 +130,7 @@ class LegalEntitySpider(scrapy.Spider):
                 "street": street,
                 "zipcode": zipcode,
                 "city": city,
-                "publication_date": publication_date,
+                "publication_date": str(publication_date),
                 "publication_number": publication_number,
                 "publication_link": pdf_absolute_url,
             }
@@ -138,6 +140,7 @@ class LegalEntitySpider(scrapy.Spider):
             item = LegalEntityItem(
                 vat=meta["vat"],
                 publication_id=pubid,
+                publication_number=publication_number,
                 publication_date=publication_date,
                 publication_meta=publication_meta,
                 file_urls=[pdf_absolute_url],
@@ -168,7 +171,27 @@ class LegalEntitySpider(scrapy.Spider):
         url += f"&btw={meta.get('vat', '')}"
         return url
 
-    def parse_metadata(self, pub_metadata: list[str]) -> Tuple[str, str, str, str]:
+    def parse_publication_url(self, urls: list[str]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        """finds the publication url from all the urls in the publication div
+
+        :param urls: list of urls
+        :return: pdf_relative_url, pdf_absolute_url, pubid
+        """
+        urls = [url for url in urls if url.endswith(".pdf")]
+        if len(urls) == 1:
+            pdf_relative_url = urls[0]
+            pdf_absolute_url = self.base_url + pdf_relative_url
+            pubid = Path(pdf_relative_url).stem
+            return pdf_relative_url, pdf_absolute_url, pubid
+
+        if len(urls) > 1:
+            self.logger.error(f"Multiple urls found in the publication div, could not extract pdfurl from {urls}")
+
+        return None, None, None
+
+    def parse_metadata(
+        self, pub_metadata: list[str]
+    ) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
         """parses the metadata section in the publication element
 
         :param pub_metadata: metadata section in publication element
@@ -182,19 +205,18 @@ class LegalEntitySpider(scrapy.Spider):
         (can be outdated - new publications / new companies are sometimes missing it but gets corrected)
         """
         if len(pub_metadata) == 4:
-            self.logger.debug("Metadata section of publication is in standard format.")
+            self.logger.debug("Metadata section of publication is of length 4.")
             address, vat, act_description, pub_date_and_number = pub_metadata
-        elif len(pub_metadata) == 2:
-            self.logger.debug("Metadata section of publication is in standard format.")
-            vat, pub_date_and_number = pub_metadata
-            address = vat = ""
+        elif len(pub_metadata) == 6:
+            self.logger.debug("Metadata section of publication is of length 6.")
+            address, vat, act_description, pub_date_and_number, _, _ = pub_metadata
         else:
-            self.logger.warning(f"Unimplemented metadata format: {pub_metadata}")
-            address = vat = act_description = pub_date_and_number = ""
+            self.logger.warning(f"Unimplemented metadata format with length {len(pub_metadata)}: {pub_metadata}")
+            address = vat = act_description = pub_date_and_number = None
 
         return address, vat, act_description, pub_date_and_number
 
-    def extract_address(self, address: str) -> Tuple[str, str, str]:
+    def extract_address(self, address: Optional[str]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
         """extracts the city, zipcode and street from the address metadata section
 
         :param address: address metadata
@@ -204,8 +226,8 @@ class LegalEntitySpider(scrapy.Spider):
         RUE JACQUES JORDAENS 32A, BTE6 1000 BRUXELLES
         """
         if not address:
-            self.logger.debug("Address was blank, could not extract city, zipcode, street")
-            return "", "", ""
+            self.logger.debug("Address was blank or empty, could not extract city, zipcode, street")
+            return None, None, None
 
         address_matched = re.match(r"^(?P<street>.*)\s(?P<zipcode>\d{4})\s(?P<city>.*)$", address)
         if address_matched:
@@ -213,12 +235,18 @@ class LegalEntitySpider(scrapy.Spider):
             zipcode = address_matched.group("zipcode")
             city = address_matched.group("city")
         else:
-            self.logger.warning(f"Could not extract street, zipcode and city from address: '{address}'")
-            street = zipcode = city = ""
+            self.logger.warning(
+                f"Could not extract street, zipcode and city from address: '{address}'. "
+                "Defaulting to setting the address section to the city attribute."
+            )
+            city = address
+            street = zipcode = None
 
         return city, zipcode, street
 
-    def extract_publication_date_and_number(self, pub_date_and_number: str) -> Tuple[str, str]:
+    def extract_publication_date_and_number(
+        self, pub_date_and_number: Optional[str]
+    ) -> Tuple[Optional[date], Optional[str]]:
         """extracts the publication date and number
 
         :param pub_date_and_number: combined date and number
@@ -227,11 +255,25 @@ class LegalEntitySpider(scrapy.Spider):
         example pub_date_and_number:
         "2024-06-05 / 0402585"
         """
-        publication_matched = re.match(r"^(?P<date>\d{4}-\d{2}-\d{2})\s/\s(?P<number>\d{3,7})$", pub_date_and_number)
-        if publication_matched:
-            publication_date = publication_matched.group("date")
-            publication_number = publication_matched.group("number")
-        else:
-            self.logger.warning(f"Could not extract publication date and number from: '{pub_date_and_number}'")
-            publication_date = publication_number = ""
+        if not pub_date_and_number:
+            self.logger.debug("Could not extract publication date and number from empty pub_date_and_number")
+            return None, None
+
+        match = re.match(r"^(?P<date>\d{4}-\d{2}-\d{2})\s/\s(?P<number>\d*-?\d+)$", pub_date_and_number)
+        if match:
+            self.logger.debug("¨Publication date and number are in standard format")
+            publication_date = datetime.strptime(match.group("date"), "%Y-%m-%d").date()
+            publication_number = match.group("number")
+            return publication_date, publication_number
+
+        # older publications have often only the year specified.
+        match = re.match(r"^(?P<date>\d{4})\s/\s(?P<number>\d*-?\d+)$", pub_date_and_number)
+        if match:
+            self.logger.debug("¨Publication date contains only the year.")
+            publication_date = datetime.strptime(match.group("date"), "%Y").date()
+            publication_number = match.group("number")
+            return publication_date, publication_number
+
+        self.logger.warning(f"Could not extract publication date and number from: '{pub_date_and_number}'")
+        publication_date = publication_number = None
         return publication_date, publication_number

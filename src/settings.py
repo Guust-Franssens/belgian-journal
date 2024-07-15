@@ -70,7 +70,8 @@ ROBOTSTXT_OBEY = True
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    "src.pipelines.LegalEntityPipeline": 300,
+    "src.pipelines.LegalEntityFilePipeline": 100,
+    "src.pipelines.LegalEntityPipeline": 200,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
@@ -102,7 +103,7 @@ FEED_EXPORT_ENCODING = "utf-8"
 LOG_LEVEL = "INFO"
 ROOT_DIR = Path(__file__).parents[1]
 FILES_STORE = str(ROOT_DIR / "tmp_pdfs")
-CLEANUP_FILES_STORE = False
+CLEANUP = False  # delete file store and blobs in the azure storage (helps for debugging, in prod should be False)
 
 # AZURE STORAGE SETTINGS
 AZURE_STORAGE_ACCOUNT_KEY = os.getenv("AZURE_STORAGE_ACCOUNT_KEY")

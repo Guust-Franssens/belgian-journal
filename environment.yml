@@ -12,4 +12,5 @@ dependencies:
     - azureml-core==1.56.*
     - azure-storage-blob==12.20.*
     - pymupdf==1.24.*
+    - matplotlib==3.9.1
     # - openai==1.35.*
