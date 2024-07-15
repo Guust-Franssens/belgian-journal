@@ -1,7 +1,6 @@
 import json
 import logging
 import shutil
-from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -11,6 +10,7 @@ from scrapy.exceptions import DropItem
 from scrapy.pipelines.files import FilesPipeline
 from scrapy.utils.project import get_project_settings
 
+from src.extract_text import extract_text
 from src.items import LegalEntityItem
 from src.spiders import LegalEntitySpider
 
@@ -18,7 +18,6 @@ SETTINGS = get_project_settings()
 AZURE_STORAGE_ACCOUNT_URL = SETTINGS["AZURE_STORAGE_ACCOUNT_URL"]
 AZURE_STORAGE_ACCOUNT_KEY = SETTINGS["AZURE_STORAGE_ACCOUNT_KEY"]
 AZURE_CONTAINER_NAME = SETTINGS["AZURE_CONTAINER_NAME"]
-PUB_DATE_THRESHOLD = SETTINGS["PUB_DATE_THRESHOLD"]
 
 # Azure info is used a lot (per putting a BLOB once)
 azurelogger = logging.getLogger("azure")
@@ -28,7 +27,7 @@ blob_service_client = BlobServiceClient(AZURE_STORAGE_ACCOUNT_URL, AZURE_STORAGE
 container_client = blob_service_client.get_container_client(AZURE_CONTAINER_NAME)
 
 
-class LegalEntityPipeline(FilesPipeline):
+class LegalEntityFilePipeline(FilesPipeline):
     def file_path(self, request, response=None, info=None, *, item=None):
         """
         returns the relative save location for the to-download file
@@ -43,31 +42,23 @@ class LegalEntityPipeline(FilesPipeline):
     def item_completed(self, results, item, info):
         """Runs after the PDF was downloaded.
 
-        saves the metadata of the publication as a JSON file in Azure storage
-        saves a digital copy of the pdf in Azure storage
+        saves the publication as a JSON file in Azure storage
         (either PDF was digital from start or we OCR'ed it using Azure Cognitive Services)
-
-        :param results: _description_
-        :param item: _description_
-        :param info: _description_
         """
         status, result = results[0]  # only one pdf is downloaded per item so results is always of length 1
 
-        if not status:  # something went wrong when downloading file
-            raise DropItem(f"{result['url']} was not successfully retrieved")
+        if not status and SETTINGS["ROBOTSTXT_OBEY"]:
+            raise DropItem(f"{item['file_urls'][0]} could not be downloaded due to `ROBOTSTXT_OBEY=True`.")
 
-        raw_pdf = Path(SETTINGS["FILES_STORE"]) / result["path"]  # noqa
-        pub_date = datetime.strptime(item["publication_date"], "%Y-%m-%d").date()
-        meta_path = str(
-            Path(item["vat"])
-            / str(pub_date.year)
-            / str(pub_date.month)
-            / str(pub_date.day)
-            / f"{item['publication_meta']['publication_number']}.json"
-        )
+        if not status:
+            raise DropItem(f"Something went wrong when downloading {item['file_urls'][0]}.")
 
-        blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=meta_path)
-        blob_client.upload_blob(json.dumps(item["publication_meta"]).encode("utf-8"), overwrite=True)
+        publication_date = item["publication_date"]
+        if not publication_date:
+            raise DropItem(f"Publication date was not correctly extracted for {item['file_urls'][0]}.")
+
+        item["file_path"] = str(Path(SETTINGS["FILES_STORE"]) / Path(result["path"]).relative_to("/"))
+
         return item
 
     def process_item(self, item: scrapy.Item, spider: scrapy.Spider):
@@ -83,10 +74,53 @@ class LegalEntityPipeline(FilesPipeline):
         """
         cleans up the temporary PDF files at the end of the run
 
-        if SETTINGS
+        this is only done if CLEANUP is set in the project settings
         """
-        if isinstance(spider, LegalEntitySpider) and SETTINGS["CLEANUP_FILES_STORE"]:
+        if isinstance(spider, LegalEntitySpider) and SETTINGS["CLEANUP"]:
             spider.logger.info(f"Cleaning up {SETTINGS['FILES_STORE']}")
             folder = Path(SETTINGS["FILES_STORE"])
             if folder.exists():
                 shutil.rmtree(str(folder))
+
+
+class LegalEntityPipeline:
+    async def process_item(self, item, spider):
+        """Runs after the PDF was downloaded. Runs the Azure OCR as a coroutine to not block
+        the scrapy processes.
+
+        saves the publication as a JSON file in Azure storage
+        (either PDF was digital from start or we OCR'ed it using Azure Cognitive Services)
+        """
+        if not isinstance(item, LegalEntityItem) or not isinstance(spider, LegalEntitySpider):
+            return item
+
+        publication_date = item["publication_date"]
+        publication = item["publication_meta"]
+        pdf_path = item["file_path"]
+
+        text, is_digital = await extract_text(pdf_path)
+        publication["text"] = text
+        publication["is_digital"] = is_digital
+        meta_path = str(
+            Path(item["vat"])
+            / str(publication_date.year)
+            / str(publication_date.month)
+            / str(publication_date.day)
+            / f"{item['publication_number']}.json"
+        )
+        blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=meta_path)
+        blob_client.upload_blob(json.dumps(publication).encode("utf-8"), overwrite=True)
+        return item
+
+    def close_spider(self, spider: scrapy.Spider):
+        """
+        cleans up the temporary PDF files at the end of the run
+
+        if SETTINGS
+        """
+        if isinstance(spider, LegalEntitySpider) and SETTINGS["CLEANUP"]:
+            spider.logger.info(f"Cleaning up BLOBs on {AZURE_CONTAINER_NAME}")
+            blobs = container_client.list_blob_names()
+            for blob in blobs:
+                blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=blob)
+                blob_client.delete_blob("include")
