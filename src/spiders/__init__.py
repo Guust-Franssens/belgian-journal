@@ -3,8 +3,10 @@
 # Please refer to the documentation for information on how to create and manage
 # your spiders.
 
-from src.spiders.legal_entities import LegalEntitySpider
+from src.spiders.legal_entities import BaseLegalEntitySpider, LegalEntityDateSpider, LegalEntityVatSpider
 
 __all__ = [
-    "LegalEntitySpider",
+    "BaseLegalEntitySpider",
+    "LegalEntityDateSpider",
+    "LegalEntityVatSpider",
 ]

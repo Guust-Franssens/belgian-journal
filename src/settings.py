@@ -103,7 +103,10 @@ FEED_EXPORT_ENCODING = "utf-8"
 LOG_LEVEL = "INFO"
 ROOT_DIR = Path(__file__).parents[1]
 FILES_STORE = str(ROOT_DIR / "tmp_pdfs")
-CLEANUP = False  # delete file store and blobs in the azure storage (helps for debugging, in prod should be False)
+
+# useful for debugging, should be False in PROD
+CLEANUP_FILESTORE = False  # deletes tmp_pdfs ==> forces redownload of a pdf when not available on BLOB
+CLEANUP_BLOBSTORE = False  # deletes Azure Container content ==> forces Scrapy Item in next run
 
 # AZURE STORAGE SETTINGS
 AZURE_STORAGE_ACCOUNT_KEY = os.getenv("AZURE_STORAGE_ACCOUNT_KEY")

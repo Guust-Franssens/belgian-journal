@@ -4,9 +4,9 @@ https://www.ejustice.just.fgov.be/cgi_tsv/rech.pl
 """
 
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Generator, Iterable, Literal, Optional, Tuple, Union
+from typing import Generator, Iterable, Literal, Optional, Tuple
 
 import scrapy
 from azure.storage.blob import BlobServiceClient
@@ -28,23 +28,17 @@ LEGAL_ENTITIES = [
 ]
 
 
-class LegalEntitySpider(scrapy.Spider):
-    name = "legal-entity-spider"
+class BaseLegalEntitySpider(scrapy.Spider):
     base_url = "https://www.ejustice.just.fgov.be"
     blob_service_client = BlobServiceClient(AZURE_STORAGE_ACCOUNT_URL, AZURE_STORAGE_ACCOUNT_KEY)
     container_client = blob_service_client.get_container_client(AZURE_CONTAINER_NAME)
+    type: Optional[Literal["vat", "date"]] = None
 
-    def start_requests(self) -> Iterable[Request]:
-        """starting point for the scraper
-
-        Makes a request for each vat number in `LEGAL_ENTITIES` between a given date range.
-        This request is continued in the method `continue requests`.
-
-        :yield: a scrapy Request per to-scrape legal entity.
-        """
-        for legal_entity in LEGAL_ENTITIES:
-            url = self.format_url(legal_entity)
-            yield Request(url=url, callback=self.parse, meta=legal_entity)
+    def __init__(self, *args, **kwargs):
+        super(BaseLegalEntitySpider, self).__init__(*args, **kwargs)
+        blobs = list(self.container_client.list_blob_names())
+        self.vats = {str(Path(blob).parents[-2]) for blob in blobs}
+        self.num_pubs = len(blobs)
 
     def parse(self, response: Response) -> Optional[Iterable[Request] | Generator[scrapy.Item, None, None]]:
         """
@@ -63,7 +57,7 @@ class LegalEntitySpider(scrapy.Spider):
             return None
 
         # publication element is the `block` per publication
-        publication_elements: SelectorList = response.xpath("/html/body/div/div[4]/div/main/div[2]/div/div[*]")
+        publication_elements = response.xpath("/html/body/div/div[4]/div/main/div[2]/div/div[*]")
 
         # process elements on page by collecting publication elements
         if publication_elements:
@@ -85,7 +79,9 @@ class LegalEntitySpider(scrapy.Spider):
         :param publication_elements: all publication elements found for the legal entity for the given filters
         :param meta: response.meta from previous request
         """
-        scraped = {Path(item).stem for item in self.container_client.list_blob_names(name_starts_with=meta["vat"])}
+        if meta.get("vat"):
+            scraped = {Path(item).stem for item in self.container_client.list_blob_names(name_starts_with=meta["vat"])}
+
         pub_date_threshold = meta["start_date"] or self.settings["PUB_DATE_THRESHOLD"]
 
         publication_elements: SelectorList = meta["publication_elements"]
@@ -99,10 +95,14 @@ class LegalEntitySpider(scrapy.Spider):
             pub_metadata = [i.strip() for i in publication_element.xpath("./div/a[1]/text()").getall()]
 
             address, vat, act_description, pub_date_and_number = self.parse_metadata(pub_metadata)
+            vat = vat.replace(".", "").strip() if vat else None
             city, zipcode, street = self.extract_address(address)
             publication_date, publication_number = self.extract_publication_date_and_number(pub_date_and_number)
 
-            if publication_date and publication_date <= pub_date_threshold:
+            if not meta.get("vat") and vat:
+                scraped = {Path(i).stem for i in self.container_client.list_blob_names(name_starts_with=vat)}
+
+            if publication_date and publication_date < pub_date_threshold:
                 remaining = len(publication_elements) - (i + 1)
                 self.logger.info(f"Threshold date reached {pub_date_threshold}, skipping {remaining} pubs...")
                 break
@@ -121,7 +121,7 @@ class LegalEntitySpider(scrapy.Spider):
                 continue
 
             publication_meta = {
-                "vat": meta["vat"],
+                "vat": meta.get("vat", vat),
                 "pubid": pubid,  # last two digits of publication date year + publication number
                 "act_description": act_description,
                 "company_name": company_name,
@@ -138,7 +138,7 @@ class LegalEntitySpider(scrapy.Spider):
 
             self.logger.info(f"Creating Scrapy Item to download {pdf_absolute_url}")
             item = LegalEntityItem(
-                vat=meta["vat"],
+                vat=meta.get("vat", vat),
                 publication_id=pubid,
                 publication_number=publication_number,
                 publication_date=publication_date,
@@ -147,17 +147,7 @@ class LegalEntitySpider(scrapy.Spider):
             )
             yield item
 
-    def closed(self, reason: Literal["finished", "cancelled", "cancelled"]) -> None:
-        """Called whenever the spider gets closed
-
-        :param reason: reason of the closing of the spider
-        """
-        if reason != "finished":
-            return
-
-        self.logger.info("Successfully finished scraping run.")
-
-    def format_url(self, meta: dict[str, Union[str, int]]) -> str:
+    def format_url(self, meta: dict) -> str:
         """creates the to-scrape url based on the meta
 
         :param meta: _description_
@@ -168,7 +158,13 @@ class LegalEntitySpider(scrapy.Spider):
             url = f"{self.base_url}/cgi_tsv/list.pl?language=nl&page={str(page)}"
         else:
             url = f"{self.base_url}/cgi_tsv/rech_res.pl?language=nl"
-        url += f"&btw={meta.get('vat', '')}"
+
+        if self.type == "vat":
+            url += f"&btw={meta['vat']}"
+
+        if self.type == "date":
+            url += f"&pdd={meta['start_date'].strftime('%Y-%m-%d')}&pdf={meta['end_date'].strftime('%Y-%m-%d')}"
+
         return url
 
     def parse_publication_url(self, urls: list[str]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
@@ -277,3 +273,61 @@ class LegalEntitySpider(scrapy.Spider):
         self.logger.warning(f"Could not extract publication date and number from: '{pub_date_and_number}'")
         publication_date = publication_number = None
         return publication_date, publication_number
+
+    def closed(self, reason: Literal["finished", "cancelled", "cancelled"]) -> None:
+        """Called whenever the spider gets closed
+
+        :param reason: reason of the closing of the spider
+        """
+        if reason != "finished":
+            return
+
+        blobs = list(self.container_client.list_blob_names())
+        vats = {str(Path(blob).parents[-2]) for blob in blobs}
+        num_pubs = len(blobs)
+        self.logger.info("Successfully finished scraping run.")
+        self.logger.info(f"Created {len(vats - self.vats)} new companies and {self.num_pubs - num_pubs} publications.")
+        self.logger.info(f"New companies: {vats - self.vats}.")
+
+
+class LegalEntityVatSpider(BaseLegalEntitySpider):
+    name = "legal-entity-vat-spider"
+    type: Optional[Literal["vat", "date"]] = "date"
+
+    def start_requests(self) -> Iterable[Request]:
+        """starting point for the scraper
+
+        Makes a request for each vat number in `LEGAL_ENTITIES` between a given date range.
+        This request is continued in the method `continue requests`.
+
+        :yield: a scrapy Request per to-scrape legal entity.
+        """
+        for legal_entity in LEGAL_ENTITIES:
+            url = self.format_url(legal_entity)
+            legal_entity["vat"] = str(int(legal_entity["vat"]))
+            yield Request(url=url, callback=self.parse, meta=legal_entity)
+
+
+class LegalEntityDateSpider(BaseLegalEntitySpider):
+    name = "legal-entity-date-spider"
+    type: Optional[Literal["vat", "date"]] = "date"
+
+    def __init__(self, *args, start_date: str, end_date: Optional[str] = None, **kwargs):
+        super(LegalEntityDateSpider, self).__init__(*args, **kwargs)
+        self.start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+        self.end_date = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else date.today()
+
+    def start_requests(self) -> Iterable[Request]:
+        """starting point for the scraper
+
+        Makes a request for each vat number in `LEGAL_ENTITIES` between a given date range.
+        This request is continued in the method `continue requests`.
+
+        :yield: a scrapy Request per to-scrape legal entity.
+        """
+        delta_days = self.end_date - self.start_date
+        for i in range(delta_days.days + 1):
+            scrape_date = self.start_date + timedelta(days=i)
+            meta = {"start_date": scrape_date, "end_date": scrape_date}
+            url = self.format_url(meta)
+            yield Request(url=url, callback=self.parse, meta=meta)
