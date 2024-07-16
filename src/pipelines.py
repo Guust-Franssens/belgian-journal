@@ -1,6 +1,8 @@
 import json
 import logging
 import shutil
+import time
+from datetime import timedelta
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -12,7 +14,7 @@ from scrapy.utils.project import get_project_settings
 
 from src.extract_text import extract_text
 from src.items import LegalEntityItem
-from src.spiders import LegalEntitySpider
+from src.spiders import BaseLegalEntitySpider
 
 SETTINGS = get_project_settings()
 AZURE_STORAGE_ACCOUNT_URL = SETTINGS["AZURE_STORAGE_ACCOUNT_URL"]
@@ -65,7 +67,7 @@ class LegalEntityFilePipeline(FilesPipeline):
         """
         Only runs this pipeline for LegalEntityItems and if the Spider was LegalEntitySpider
         """
-        if isinstance(item, LegalEntityItem) and isinstance(spider, LegalEntitySpider):
+        if isinstance(item, LegalEntityItem) and isinstance(spider, BaseLegalEntitySpider):
             return super().process_item(item, spider)
 
         return item
@@ -76,7 +78,7 @@ class LegalEntityFilePipeline(FilesPipeline):
 
         this is only done if CLEANUP is set in the project settings
         """
-        if isinstance(spider, LegalEntitySpider) and SETTINGS["CLEANUP"]:
+        if isinstance(spider, BaseLegalEntitySpider) and SETTINGS["CLEANUP_FILESTORE"]:
             spider.logger.info(f"Cleaning up {SETTINGS['FILES_STORE']}")
             folder = Path(SETTINGS["FILES_STORE"])
             if folder.exists():
@@ -91,14 +93,27 @@ class LegalEntityPipeline:
         saves the publication as a JSON file in Azure storage
         (either PDF was digital from start or we OCR'ed it using Azure Cognitive Services)
         """
-        if not isinstance(item, LegalEntityItem) or not isinstance(spider, LegalEntitySpider):
+        if not isinstance(item, LegalEntityItem) or not isinstance(spider, BaseLegalEntitySpider):
             return item
 
+        vat = item["vat"]
         publication_date = item["publication_date"]
+        publication_number = item["publication_number"]
+
+        if not vat or not publication_date or not publication_number:
+            raise DropItem(
+                f"vat: '{vat}' - publication date: '{publication_date}' - publication number '{publication_number}'"
+                "was not retrieved correctly (i.e. null)."
+            )
+
         publication = item["publication_meta"]
         pdf_path = item["file_path"]
 
+        start = time.perf_counter()
         text, is_digital = await extract_text(pdf_path)
+        duration = timedelta(seconds=time.perf_counter() - start)
+        spider.logger.info(f"Extracted text in {duration} from {'digital' if is_digital else 'scan'} PDF.")
+
         publication["text"] = text
         publication["is_digital"] = is_digital
         meta_path = str(
@@ -118,7 +133,7 @@ class LegalEntityPipeline:
 
         if SETTINGS
         """
-        if isinstance(spider, LegalEntitySpider) and SETTINGS["CLEANUP"]:
+        if isinstance(spider, BaseLegalEntitySpider) and SETTINGS["CLEANUP_BLOBSTORE"]:
             spider.logger.info(f"Cleaning up BLOBs on {AZURE_CONTAINER_NAME}")
             blobs = container_client.list_blob_names()
             for blob in blobs:
