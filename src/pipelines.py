@@ -78,8 +78,8 @@ class LegalEntityFilePipeline(FilesPipeline):
 
         this is only done if CLEANUP is set in the project settings
         """
-        if isinstance(spider, BaseLegalEntitySpider) and SETTINGS["CLEANUP_FILESTORE"]:
-            spider.logger.info(f"Cleaning up {SETTINGS['FILES_STORE']}")
+        if isinstance(spider, BaseLegalEntitySpider) and spider.settings["CLEANUP_FILESTORE"]:
+            spider.logger.info(f"Cleaning up {spider.settings['FILES_STORE']}")
             folder = Path(SETTINGS["FILES_STORE"])
             if folder.exists():
                 shutil.rmtree(str(folder))
@@ -110,9 +110,13 @@ class LegalEntityPipeline:
         pdf_path = item["file_path"]
 
         start = time.perf_counter()
-        text, is_digital = await extract_text(pdf_path)
+        text, is_digital = await extract_text(pdf_path, do_ocr=spider.settings["OCR"])
+
+        if not is_digital and not spider.settings["OCR"]:
+            raise DropItem(f"{item['file_urls'][0]} is a scan and `OCR=False`.")
+
         duration = timedelta(seconds=time.perf_counter() - start)
-        spider.logger.info(f"Extracted text in {duration} from {'digital' if is_digital else 'scan'} PDF.")
+        spider.logger.debug(f"Extracted text in {duration} from {'digital' if is_digital else 'scan'} PDF.")
 
         publication["text"] = text
         publication["is_digital"] = is_digital
@@ -133,7 +137,7 @@ class LegalEntityPipeline:
 
         if SETTINGS
         """
-        if isinstance(spider, BaseLegalEntitySpider) and SETTINGS["CLEANUP_BLOBSTORE"]:
+        if isinstance(spider, BaseLegalEntitySpider) and spider.settings["CLEANUP_BLOBSTORE"]:
             spider.logger.info(f"Cleaning up BLOBs on {AZURE_CONTAINER_NAME}")
             blobs = container_client.list_blob_names()
             for blob in blobs:

@@ -126,12 +126,13 @@ async def extract_text_scan(pdf: pymupdf.Document) -> str:
     return text
 
 
-async def extract_text(pdf: pymupdf.Document | str | Path) -> tuple[str, bool]:
+async def extract_text(pdf: pymupdf.Document | str | Path, do_ocr: bool = True) -> tuple[Optional[str], bool]:
     """extracts text from a pdf. If the pdf is digital, the text will be extracted straight from the
     pdf. If  the pdf is a scan, the pdf will be submitted to Azure Document Intelligence OCR
     after which the text is extracted.
 
     :param pdf: pymupdf.Document | str | Path
+    :param do_ocr: boolean if set to False no OCR will be performed when the provided pdf is a scan.
     :return: tuple(text, is_digital)
     """
     if isinstance(pdf, (str, Path)):
@@ -141,8 +142,10 @@ async def extract_text(pdf: pymupdf.Document | str | Path) -> tuple[str, bool]:
     text = extract_text_digital(pdf)
     if text:
         is_digital = True
-    else:
+    elif not text and do_ocr:
         text = await extract_text_scan(pdf)
         is_digital = False
+    else:
+        text, is_digital = None, False
 
     return text, is_digital
