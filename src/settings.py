@@ -104,8 +104,11 @@ LOG_LEVEL = "INFO"
 ROOT_DIR = Path(__file__).parents[1]
 FILES_STORE = str(ROOT_DIR / "tmp_pdfs")
 
+# Perform OCR on scans (cost of $5 per 1000 pages), if set to False drops the scan PDFs.
+OCR = True
+
 # useful for debugging, should be False in PROD
-CLEANUP_FILESTORE = False  # deletes tmp_pdfs ==> forces redownload of a pdf when not available on BLOB
+CLEANUP_FILESTORE = True  # deletes tmp_pdfs ==> forces redownload of a pdf when not available on BLOB
 CLEANUP_BLOBSTORE = False  # deletes Azure Container content ==> forces Scrapy Item in next run
 
 # AZURE STORAGE SETTINGS
