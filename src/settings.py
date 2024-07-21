@@ -100,8 +100,9 @@ REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
 
-LOG_LEVEL = "INFO"
 ROOT_DIR = Path(__file__).parents[1]
+LOG_LEVEL = "INFO"
+LOG_FILE = str(ROOT_DIR / "scrapy.log")
 FILES_STORE = str(ROOT_DIR / "tmp_pdfs")
 
 # Perform OCR on scans (cost of $5 per 1000 pages), if set to False drops the scan PDFs.
