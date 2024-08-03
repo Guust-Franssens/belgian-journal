@@ -292,7 +292,7 @@ class BaseLegalEntitySpider(scrapy.Spider):
 
 class LegalEntityVatSpider(BaseLegalEntitySpider):
     name = "legal-entity-vat-spider"
-    type: Optional[Literal["vat", "date"]] = "date"
+    type: Optional[Literal["vat", "date"]] = "vat"
 
     def start_requests(self) -> Iterable[Request]:
         """starting point for the scraper
