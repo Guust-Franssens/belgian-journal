@@ -286,7 +286,7 @@ class BaseLegalEntitySpider(scrapy.Spider):
         vats = {str(Path(blob).parents[-2]) for blob in blobs}
         num_pubs = len(blobs)
         self.logger.info("Successfully finished scraping run.")
-        self.logger.info(f"Created {len(vats - self.vats)} new companies and {self.num_pubs - num_pubs} publications.")
+        self.logger.info(f"Created {len(vats - self.vats)} new companies and {num_pubs - self.num_pubs} publications.")
         self.logger.info(f"New companies: {vats - self.vats}.")
 
 
