@@ -1,5 +1,5 @@
 # Belgian Official Journal
-Small pet project for playing around with [Belgian official journal](https://www.ejustice.just.fgov.be/cgi_tsv_pub/welcome.pl) (AKA Belgisch Staatsblad/Moniteur Belge).
+Small pet project for playing around with [Belgian official journal](https://www.ejustice.just.fgov.be/cgi_tsv_pub/welcome.pl) (AKA Belgisch Staatsblad/Moniteur Belge). This repo implements a web-scraper to collect legal entity publications, a method to perform text extraction and OCRization (using Azure Document Intelligence) and summarization (using Azure OpenAI).
 
 ## Project setup
 1. setup the environment by installing [environment.yml](environment.yml)<br>
@@ -22,3 +22,6 @@ There is additional documentation on this project for the following topics:
 
 ## Visual overview
 ![](documentation/resources/solution.png)
+
+## Publications dataset
+On [Hugging Face](https://huggingface.co/datasets/guust-franssens/belgian-journal) you can find a dataset that was created by crawling with the legal-entity-date-spider.
