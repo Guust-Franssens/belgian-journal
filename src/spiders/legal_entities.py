@@ -25,6 +25,7 @@ AZURE_CONTAINER_NAME = SETTINGS["AZURE_CONTAINER_NAME"]
 LEGAL_ENTITIES = [
     {"vat": "0471938850", "start_date": date(year=1998, month=7, day=29), "end_date": date.today()},  # EY consulting
     {"vat": "0463318421", "start_date": None, "end_date": None},  # NORRIQ Belgium
+    {"vat": "0799497754", "start_date": None, "end_date": None},  # NORRIQ Financial Services
 ]
 
 
@@ -231,12 +232,8 @@ class BaseLegalEntitySpider(scrapy.Spider):
             zipcode = address_matched.group("zipcode")
             city = address_matched.group("city")
         else:
-            self.logger.warning(
-                f"Could not extract street, zipcode and city from address: '{address}'. "
-                "Defaulting to setting the address section to the city attribute."
-            )
-            city = address
-            street = zipcode = None
+            self.logger.warning(f"Could not extract street, zipcode and city from address: '{address}'. ")
+            city = street = zipcode = None
 
         return city, zipcode, street
 
