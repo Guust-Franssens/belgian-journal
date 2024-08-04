@@ -18,6 +18,7 @@ There is additional documentation on this project for the following topics:
 - [scraping](documentation/scraping.md)
 - [OCR](documentation/ocr.md)
 - [text extraction](documentation/extract_text.md)
+- [summarization](documentation/summarize.md)
 
 ## Visual overview
 ![](documentation/resources/solution.png)
