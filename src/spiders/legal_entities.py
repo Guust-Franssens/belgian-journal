@@ -3,6 +3,7 @@ scrapes legal entities from the following web page:
 https://www.ejustice.just.fgov.be/cgi_tsv/rech.pl
 """
 
+import logging
 import re
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -15,6 +16,10 @@ from scrapy.selector.unified import SelectorList
 from scrapy.utils.project import get_project_settings
 
 from src.items import LegalEntityItem
+
+# Azure info is used a lot (per putting a BLOB once)
+azurelogger = logging.getLogger("azure")
+azurelogger.setLevel(logging.WARNING)
 
 SETTINGS = get_project_settings()
 AZURE_STORAGE_ACCOUNT_URL = SETTINGS["AZURE_STORAGE_ACCOUNT_URL"]
