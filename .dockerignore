@@ -9,6 +9,7 @@ documentation/
 notebooks/
 .git/
 .myenv
+my_env.yaml
 scrapy.log
 Dockerfile
 .dockerignore

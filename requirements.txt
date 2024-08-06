@@ -1,6 +1,5 @@
-pip==23.2
-scrapy==2.11
-python-dotenv==1.0
+scrapy==2.11.*
+python-dotenv==1.0.*
 azure-ai-formrecognizer==3.3.*
 azureml-core==1.56.*
 azure-storage-blob==12.20.*
