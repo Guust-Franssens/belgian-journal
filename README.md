@@ -1,4 +1,4 @@
-# Belgian Official Journal
+# Belgian Journal / Belgian Official Gazette / Belgisch Staatsblad / Moniteur Belge
 Small pet project for playing around with [Belgian official journal](https://www.ejustice.just.fgov.be/cgi_tsv_pub/welcome.pl) (AKA Belgisch Staatsblad/Moniteur Belge). This repo implements a web-scraper to collect [company bylaws](https://corporatefinanceinstitute.com/resources/management/company-bylaws/), along with tools for text extraction and OCR (using Azure Document Intelligence), and summarization (using Azure OpenAI).
 
 ## Project setup
