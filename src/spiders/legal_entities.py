@@ -330,6 +330,6 @@ class LegalEntityDateSpider(BaseLegalEntitySpider):
         delta_days = self.end_date - self.start_date
         for i in range(delta_days.days + 1):
             scrape_date = self.start_date + timedelta(days=i)
-            meta = {"start_date": scrape_date, "end_date": scrape_date}
+            meta = {"start_date": scrape_date, "end_date": scrape_date, "page": 1}
             url = self.format_url(meta)
             yield Request(url=url, callback=self.parse, meta=meta)
