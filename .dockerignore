@@ -3,6 +3,7 @@
 **/*.pyo
 **/*.pyd
 tmp_pdfs/
+.venv/
 venv/
 .vscode/
 documentation/
