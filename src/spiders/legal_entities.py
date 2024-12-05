@@ -75,8 +75,12 @@ class BaseLegalEntitySpider(scrapy.Spider):
             url = self.format_url(meta)
             self.logger.debug(f"100 publications on page {response.url}, continueing on next page {meta['page']}")
             yield scrapy.Request(url, callback=self.parse, meta=meta)
-        else:
+        # at least one publication element was found, parse the publications
+        elif meta.get("publication_elements"):
             yield from self.parse_publications(meta)
+        else:
+            self.logger.info(f"No publications found for {response.url}")
+            return None
 
     def parse_publications(self, meta: dict) -> Iterable[scrapy.Item]:
         """Creates a scrapy ItemLoader such that the PDFs get downloaded
