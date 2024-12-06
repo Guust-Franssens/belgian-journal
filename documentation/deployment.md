@@ -22,9 +22,9 @@ Either you automate this task with something like Github CI/CD, Azure Functions,
 ### Running manually
 ```bash
 RESOURCE_GROUP="my-resource-group"
-ACR_NAME=acrbelgianjournal
-IMAGE_NAME=belgian-journal
-ACI_NAME=belgian-journal-october
+ACR_NAME="acrbelgianjournal"
+IMAGE_NAME="belgian-journal"
+ACI_NAME="belgian-journal-october"
 START_DATE="2024-10-01"
 END_DATE="2024-10-31"
 ACR_USER="my-user"
@@ -45,4 +45,4 @@ az container create \
 ```
 
 ### Azure functions
-To be written.
+To be developed/written.
