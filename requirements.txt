@@ -6,3 +6,5 @@ azure-storage-blob==12.20.*
 pymupdf==1.24.*
 openai==1.35.*
 aiohttp==3.11.7
+azure-identity==1.19.0
+azure-keyvault-secrets==4.9.0
