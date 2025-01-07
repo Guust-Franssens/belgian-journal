@@ -4,13 +4,18 @@ https://www.ejustice.just.fgov.be/cgi_tsv/rech.pl
 """
 
 import logging
+import os
 import re
+import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Generator, Iterable, Literal, Optional, Tuple
 
 import scrapy
+from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
 from azure.storage.blob import BlobServiceClient
+from dotenv import load_dotenv
 from scrapy.http import Request, Response
 from scrapy.selector.unified import SelectorList
 from scrapy.utils.project import get_project_settings
@@ -21,10 +26,8 @@ from src.items import LegalEntityItem
 azurelogger = logging.getLogger("azure")
 azurelogger.setLevel(logging.WARNING)
 
+load_dotenv()
 SETTINGS = get_project_settings()
-AZURE_STORAGE_ACCOUNT_URL = SETTINGS["AZURE_STORAGE_ACCOUNT_URL"]
-AZURE_STORAGE_ACCOUNT_KEY = SETTINGS["AZURE_STORAGE_ACCOUNT_KEY"]
-AZURE_CONTAINER_NAME = SETTINGS["AZURE_CONTAINER_NAME"]
 
 # list of company numbers (VAT number minus BE) to scrape
 LEGAL_ENTITIES = [
@@ -36,12 +39,34 @@ LEGAL_ENTITIES = [
 
 class BaseLegalEntitySpider(scrapy.Spider):
     base_url = "https://www.ejustice.just.fgov.be"
-    blob_service_client = BlobServiceClient(AZURE_STORAGE_ACCOUNT_URL, AZURE_STORAGE_ACCOUNT_KEY)
-    container_client = blob_service_client.get_container_client(AZURE_CONTAINER_NAME)
     type: Optional[Literal["vat", "date"]] = None
 
     def __init__(self, *args, **kwargs):
+        # initialize parent class
         super(BaseLegalEntitySpider, self).__init__(*args, **kwargs)
+
+        # get Azure KeyVault secrets
+        self.azure_credential = DefaultAzureCredential()
+        secret_client = SecretClient(vault_url=os.environ["AZURE_KEYVAULT_URL"], credential=self.azure_credential)
+        azure_container_name = secret_client.get_secret("blob-storage-container-name").value
+        azure_storage_account_url = secret_client.get_secret("blob-storage-url").value
+        self.document_intelligence_url = secret_client.get_secret("document-intelligence-url").value
+        ocr_configured_properly = (SETTINGS["OCR"] and self.document_intelligence_url) or not SETTINGS["OCR"]
+        if not all((azure_container_name, azure_storage_account_url, ocr_configured_properly)):
+            sys.exit(
+                "Check if Azure KeyVault secrets are correctly set:\n"
+                f"\tblob-storage-container-name: {azure_container_name}\n"
+                f"\tblob-storage-url: {azure_storage_account_url}\n"
+                f"{'document-intelligence-url: ' + str(self.document_intelligence_url) if SETTINGS['OCR'] else ''}"
+            )
+
+        # after type check we know for sure these are set correctly
+        self.azure_container_name: str = azure_container_name
+        self.azure_storage_account_url: str = azure_storage_account_url
+
+        # initialize Azure Blob storage
+        self.blob_service_client = BlobServiceClient(self.azure_storage_account_url, self.azure_credential)
+        self.container_client = self.blob_service_client.get_container_client(self.azure_container_name)
         blobs = list(self.container_client.list_blob_names())
         self.vats = {str(Path(blob).parents[-2]) for blob in blobs}
         self.num_pubs = len(blobs)
@@ -89,6 +114,7 @@ class BaseLegalEntitySpider(scrapy.Spider):
         :param publication_elements: all publication elements found for the legal entity for the given filters
         :param meta: response.meta from previous request
         """
+        # scraping based on VAT number, can create a set of already scraped publications for this VAT
         if meta.get("vat"):
             scraped = {Path(item).stem for item in self.container_client.list_blob_names(name_starts_with=meta["vat"])}
 
@@ -109,6 +135,7 @@ class BaseLegalEntitySpider(scrapy.Spider):
             city, zipcode, street = self.extract_address(address)
             publication_date, publication_number = self.extract_publication_date_and_number(pub_date_and_number)
 
+            # Date scrape doesnt have one VAT number, so we check per publication if it's already scraped
             if not meta.get("vat") and vat:
                 scraped = {Path(i).stem for i in self.container_client.list_blob_names(name_starts_with=vat)}
 

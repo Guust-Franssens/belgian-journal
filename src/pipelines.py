@@ -7,7 +7,6 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import scrapy
-from azure.storage.blob import BlobServiceClient
 from scrapy.exceptions import DropItem
 from scrapy.pipelines.files import FilesPipeline
 from scrapy.utils.project import get_project_settings
@@ -17,16 +16,10 @@ from src.items import LegalEntityItem
 from src.spiders import BaseLegalEntitySpider
 
 SETTINGS = get_project_settings()
-AZURE_STORAGE_ACCOUNT_URL = SETTINGS["AZURE_STORAGE_ACCOUNT_URL"]
-AZURE_STORAGE_ACCOUNT_KEY = SETTINGS["AZURE_STORAGE_ACCOUNT_KEY"]
-AZURE_CONTAINER_NAME = SETTINGS["AZURE_CONTAINER_NAME"]
 
 # Azure info is used a lot (per putting a BLOB once)
 azurelogger = logging.getLogger("azure")
 azurelogger.setLevel(logging.WARNING)
-
-blob_service_client = BlobServiceClient(AZURE_STORAGE_ACCOUNT_URL, AZURE_STORAGE_ACCOUNT_KEY)
-container_client = blob_service_client.get_container_client(AZURE_CONTAINER_NAME)
 
 
 class LegalEntityFilePipeline(FilesPipeline):
@@ -110,7 +103,12 @@ class LegalEntityPipeline:
         pdf_path = item["file_path"]
 
         start = time.perf_counter()
-        text, is_digital = await extract_text(pdf_path, do_ocr=spider.settings["OCR"])
+        text, is_digital = await extract_text(
+            pdf_path,
+            do_ocr=spider.settings["OCR"],
+            endpoint=spider.document_intelligence_url,
+            credential=spider.azure_credential,
+        )
 
         if not is_digital and not spider.settings["OCR"]:
             raise DropItem(f"{item['file_urls'][0]} is a scan and `OCR=False`.")
@@ -127,7 +125,7 @@ class LegalEntityPipeline:
             / str(publication_date.day)
             / f"{item['publication_number']}.json"
         )
-        blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=meta_path)
+        blob_client = spider.blob_service_client.get_blob_client(container=spider.azure_container_name, blob=meta_path)
         blob_client.upload_blob(json.dumps(publication).encode("utf-8"), overwrite=True)
         return item
 
@@ -135,11 +133,13 @@ class LegalEntityPipeline:
         """
         cleans up the temporary PDF files at the end of the run
 
-        if SETTINGS
+        CLEANUP_FILESTORE deletes tmp_pdfs ==> forces redownload of a pdf when not available on BLOB
+        CLEANUP_BLOBSTORE deletes Azure Container content ==> forces Scrapy Item in next run
         """
         if isinstance(spider, BaseLegalEntitySpider) and spider.settings["CLEANUP_BLOBSTORE"]:
-            spider.logger.info(f"Cleaning up BLOBs on {AZURE_CONTAINER_NAME}")
-            blobs = container_client.list_blob_names()
+            container = spider.azure_container_name
+            spider.logger.info(f"Cleaning up BLOBs on {container}")
+            blobs = spider.container_client.list_blob_names()
             for blob in blobs:
-                blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=blob)
+                blob_client = spider.blob_service_client.get_blob_client(container=container, blob=blob)
                 blob_client.delete_blob("include")
