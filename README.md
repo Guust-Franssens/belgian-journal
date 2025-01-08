@@ -27,6 +27,6 @@ There is additional documentation on this project for the following topics:
 On [Hugging Face](https://huggingface.co/datasets/guust-franssens/belgian-journal) you can find a dataset that was created by crawling with the legal-entity-date-spider.
 
 ## Deployment
-This project can be easily hosted in [Azure Container Instances](https://learn.microsoft.com/en-gb/azure/container-instances/). A docker image containing all the dependencies can be created using the [Dockerfile](Dockerfile). In here, pip in combination with [requirements.txt](requirements.txt) is used to keep the image light (~550 MBs).
+This project can be easily hosted in [Azure Container Instances](https://learn.microsoft.com/en-gb/azure/container-instances/). A docker image containing all the dependencies can be created using the [Dockerfile](Dockerfile). In here, pip in combination with [requirements.txt](requirements.txt) is used to keep the image light.
 A docker run can then be triggered using [Azure Automation](https://learn.microsoft.com/en-us/azure/automation/overview) with a 
 [schedule](https://learn.microsoft.com/en-us/azure/automation/shared-resources/schedules) to create the Azure Container Instance and run the scraper for that day/month/year. For more info see the [documentation](documentation/deployment.md)
