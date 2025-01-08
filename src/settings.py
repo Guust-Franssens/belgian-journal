@@ -6,7 +6,6 @@
 #     https://docs.scrapy.org/en/latest/topics/settings.html
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-import os
 from datetime import date
 from pathlib import Path
 
@@ -108,17 +107,13 @@ LOG_LEVEL = "INFO"
 # LOG_FILE = str(ROOT_DIR / "scrapy.log")
 FILES_STORE = str(ROOT_DIR / "tmp_pdfs")
 
-# Perform OCR on scans (cost of $5 per 1000 pages), if set to False drops the scan PDFs.
+# Perform OCR on scans (cost of €1.5 per 1000 pages), if set to False drops the scan PDFs.
+# for pricing see https://azure.microsoft.com/en-us/pricing/details/ai-document-intelligence/
 OCR = True
 
 # useful for debugging, should be False in PROD
 CLEANUP_FILESTORE = False  # deletes tmp_pdfs ==> forces redownload of a pdf when not available on BLOB
 CLEANUP_BLOBSTORE = False  # deletes Azure Container content ==> forces Scrapy Item in next run
-
-# AZURE STORAGE SETTINGS
-AZURE_STORAGE_ACCOUNT_KEY = os.getenv("AZURE_STORAGE_ACCOUNT_KEY")
-AZURE_STORAGE_ACCOUNT_URL = os.getenv("AZURE_STORAGE_ACCOUNT_URL")
-AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")
 
 # PUBLICATION_DATE_THRESHOLD (do not consider publications before this date)
 PUB_DATE_THRESHOLD = date(2010, 1, 1)

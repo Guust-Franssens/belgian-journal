@@ -3,7 +3,6 @@ contains helper functions to extract text from digital/searchable pdf and scanne
 """
 
 import io
-import os
 from pathlib import Path
 from statistics import mode
 from typing import Optional
@@ -11,16 +10,10 @@ from typing import Optional
 import pymupdf
 from azure.ai.formrecognizer import AnalyzeResult
 from azure.ai.formrecognizer.aio import DocumentAnalysisClient
-from azure.core.credentials import AzureKeyCredential
-from dotenv import load_dotenv
-
-load_dotenv()
+from azure.identity import DefaultAzureCredential
 
 PAGE_0_REL_COORDS = (0.15966, 0.20485, 0.95000, 0.91950)
 PAGE_N_REL_COORDS = (0.15966, 0.04899, 0.95000, 0.91950)
-
-endpoint = os.environ["AZURE_DOCUMENT_INTELLIGENCE_URL"]
-key = os.environ["AZURE_DOCUMENT_INTELLIGENCE_KEY"]
 
 __all__ = [
     "extract_text_digital",
@@ -55,7 +48,7 @@ def add_text_line(text: str, line_text: str, same_line: bool) -> str:
     return text
 
 
-async def ocr_pdf(pdf: pymupdf.Document) -> AnalyzeResult:
+async def ocr_pdf(pdf: pymupdf.Document, endpoint: str, credential: DefaultAzureCredential) -> AnalyzeResult:
     """OCRs the PDF using Azure Document Intelligence OCR.
 
     :param pdf: pymupdf.Document
@@ -63,7 +56,7 @@ async def ocr_pdf(pdf: pymupdf.Document) -> AnalyzeResult:
     pdf_bytes_io = io.BytesIO()
     pdf.save(pdf_bytes_io)
     pdf_bytes = pdf_bytes_io.getvalue()
-    di_client = DocumentAnalysisClient(endpoint=endpoint, credential=AzureKeyCredential(key))
+    di_client = DocumentAnalysisClient(endpoint=endpoint, credential=credential)
     async with di_client:
         poller = await di_client.begin_analyze_document(model_id="prebuilt-read", document=pdf_bytes)
         result = await poller.result()
@@ -93,14 +86,14 @@ def extract_text_digital(pdf: pymupdf.Document) -> str:
     return text
 
 
-async def extract_text_scan(pdf: pymupdf.Document) -> str:
+async def extract_text_scan(pdf: pymupdf.Document, endpoint: str, credential: DefaultAzureCredential) -> str:
     """1st submits the pdf to the Azure Document Intelligence OCR engine afterwhich
     the text within the dotted lines is extracted.
 
     :param pdf: pymupdf.Document
     :return: str
     """
-    ocred = await ocr_pdf(pdf)
+    ocred = await ocr_pdf(pdf, endpoint, credential)
     text = ""
     for ocr_page, scan_page in zip(ocred.pages, pdf):
         _, _, width, height = scan_page.rect
@@ -126,7 +119,12 @@ async def extract_text_scan(pdf: pymupdf.Document) -> str:
     return text
 
 
-async def extract_text(pdf: pymupdf.Document | str | Path, do_ocr: bool = True) -> tuple[Optional[str], bool]:
+async def extract_text(
+    pdf: pymupdf.Document | str | Path,
+    do_ocr: bool = True,
+    endpoint: Optional[str] = None,
+    credential: Optional[DefaultAzureCredential] = None,
+) -> tuple[Optional[str], bool]:
     """extracts text from a pdf. If the pdf is digital, the text will be extracted straight from the
     pdf. If  the pdf is a scan, the pdf will be submitted to Azure Document Intelligence OCR
     after which the text is extracted.
@@ -143,7 +141,7 @@ async def extract_text(pdf: pymupdf.Document | str | Path, do_ocr: bool = True) 
     if text:
         is_digital = True
     elif not text and do_ocr:
-        text = await extract_text_scan(pdf)
+        text = await extract_text_scan(pdf, endpoint, credential)
         is_digital = False
     else:
         text, is_digital = None, False

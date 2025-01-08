@@ -22,3 +22,5 @@ README.md
 **/.ipynb_checkpoints/
 .ruff_cache/
 pyproject.toml
+.copy.env
+LICENSE
