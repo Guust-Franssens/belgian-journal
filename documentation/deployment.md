@@ -63,6 +63,7 @@ $LOG_ANALYTICS_WORKSPACE_NAME = "amlbelgianjour3966777794"
 # Get secrets
 $ACR_KEY = az acr credential show --name $ACR_NAME --resource-group $RESOURCE_GROUP --query passwords[0].value --output tsv
 $MANAGED_IDENTITY_ID = az identity show --name $MANAGED_IDENTITY_NAME --resource-group $RESOURCE_GROUP --query id --output tsv
+$LOG_ANALYTICS_WORKSPACE_ID = az monitor log-analytics workspace show --resource-group $RESOURCE_GROUP --name $LOG_ANALYTICS_WORKSPACE_NAME --query customerId --output tsv
 $LOG_ANALYTICS_WORKSPACE_KEY = az monitor log-analytics workspace get-shared-keys --resource-group $RESOURCE_GROUP --workspace-name $LOG_ANALYTICS_WORKSPACE_NAME --query primarySharedKey --output tsv
 
 # Calculate the start and end dates dynamically (here it is based on daily scraping however can be weekly, monthly, yearly...)
@@ -80,7 +81,7 @@ az container create `
   --registry-login-server "$ACR_NAME.azurecr.io" `
   --registry-username $ACR_NAME `
   --registry-password $ACR_KEY `
-  --log-analytics-workspace $LOG_ANALYTICS_WORKSPACE_NAME `
+  --log-analytics-workspace $LOG_ANALYTICS_WORKSPACE_ID `
   --log-analytics-workspace-key $LOG_ANALYTICS_WORKSPACE_KEY `
   --assign-identity $MANAGED_IDENTITY_ID `
   --command-line "scrapy crawl legal-entity-date-spider -a start_date=$($START_DATE) -a end_date=$($END_DATE)" `
