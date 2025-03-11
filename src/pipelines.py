@@ -121,12 +121,13 @@ class LegalEntityPipeline:
         meta_path = str(
             Path(item["vat"])
             / str(publication_date.year)
-            / str(publication_date.month)
-            / str(publication_date.day)
+            / f"{publication_date.month:02d}"
+            / f"{publication_date.day:02d}"
             / f"{item['publication_number']}.json"
         )
+        tags = {"vat": vat, "publication_date": publication_date.strftime("%Y-%m-%d"), "status": "unprocessed"}
         blob_client = spider.blob_service_client.get_blob_client(container=spider.azure_container_name, blob=meta_path)
-        blob_client.upload_blob(json.dumps(publication).encode("utf-8"), overwrite=True)
+        blob_client.upload_blob(json.dumps(publication).encode("utf-8"), overwrite=True, tags=tags)
         return item
 
     def close_spider(self, spider: scrapy.Spider):
