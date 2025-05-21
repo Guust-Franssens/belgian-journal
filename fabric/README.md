@@ -1,0 +1,1 @@
+This folder contains IaC for Microsoft Fabric.
