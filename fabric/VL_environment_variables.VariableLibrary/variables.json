@@ -6,6 +6,12 @@
       "note": "",
       "type": "String",
       "value": "https://amlbelgianjour5911901849.blob.core.windows.net/"
+    },
+    {
+      "name": "update_blobs",
+      "note": "",
+      "type": "Boolean",
+      "value": false
     }
   ]
 }
