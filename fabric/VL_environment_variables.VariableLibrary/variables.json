@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/variableLibrary/definition/variables/1.0.0/schema.json",
+  "variables": [
+    {
+      "name": "storage_account_url",
+      "note": "",
+      "type": "String",
+      "value": "https://amlbelgianjour5911901849.blob.core.windows.net/"
+    }
+  ]
+}
