@@ -1,5 +1,10 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/variableLibrary/definition/valueSet/1.0.0/schema.json",
   "name": "Prod",
-  "variableOverrides": []
+  "variableOverrides": [
+    {
+      "name": "storage_account_url",
+      "value": "https://amlbelgianjour5911901850.blob.core.windows.net/"
+    }
+  ]
 }
