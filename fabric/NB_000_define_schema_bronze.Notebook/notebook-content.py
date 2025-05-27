@@ -16,8 +16,10 @@
 
 # PARAMETERS CELL ********************
 
-bronze_lh = "abfss://0d3ad52f-64d5-4aa9-9da2-3a326f988d8f@onelake.dfs.fabric.microsoft.com/6acc47f3-3745-4fc2-9ac2-52ad2d91c117"
-table = f"{bronze_lh}/Tables/belgian-journal"
+bronze_lh = notebookutils.lakehouse.get("LH_bronze").properties["abfsPath"]
+silver_lh = notebookutils.lakehouse.get("LH_silver").properties["abfsPath"]
+table_name = "belgian-journal"
+table = f"{bronze_lh}/Tables/{table_name}"
 
 # METADATA ********************
 
@@ -53,6 +55,26 @@ schema = StructType([
 # META   "language": "python",
 # META   "language_group": "synapse_pyspark"
 # META }
+
+# MARKDOWN ********************
+
+# ## Creating the bronze table
+
+# CELL ********************
+
+empty_df = spark.createDataFrame([], schema)
+empty_df.write.format("delta").mode("overwrite").option("overwriteSchema", "True").save(table)
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# MARKDOWN ********************
+
+# ## Creating the silver table
 
 # CELL ********************
 

@@ -2,11 +2,11 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
   "metadata": {
     "type": "Notebook",
-    "displayName": "NB_000_define_schemas",
-    "description": "New notebook"
+    "displayName": "NB_200_bronze_to_silver",
+    "description": "Created by fab"
   },
   "config": {
     "version": "2.0",
-    "logicalId": "ee5b953c-2c3b-88d2-48e1-5573fa994c5c"
+    "logicalId": "e4e64306-5b86-b2ab-4c64-91820c8326ca"
   }
 }

@@ -7,26 +7,12 @@
           "notebookId": "726c631b-b14e-98e3-4fcc-77aea80a55f1",
           "workspaceId": "00000000-0000-0000-0000-000000000000",
           "parameters": {
-            "bronze_lakehouse": {
+            "table_name": {
               "value": {
-                "value": "@pipeline().parameters.bronze_lakehouse",
+                "value": "@pipeline().parameters.table_name",
                 "type": "Expression"
               },
               "type": "string"
-            },
-            "storage_account_url": {
-              "value": {
-                "value": "@pipeline().parameters.storage_account_url",
-                "type": "Expression"
-              },
-              "type": "string"
-            },
-            "update_blobs": {
-              "value": {
-                "value": "@pipeline().parameters.update_blobs",
-                "type": "Expression"
-              },
-              "type": "bool"
             }
           }
         },
@@ -61,9 +47,9 @@
                 "notebookId": "ee5b953c-2c3b-88d2-48e1-5573fa994c5c",
                 "workspaceId": "00000000-0000-0000-0000-000000000000",
                 "parameters": {
-                  "bronze_lakehouse": {
+                  "table_name": {
                     "value": {
-                      "value": "@pipeline().parameters.bronze_lakehouse",
+                      "value": "@pipeline().parameters.table_name",
                       "type": "Expression"
                     },
                     "type": "string"
@@ -92,17 +78,9 @@
         "type": "bool",
         "defaultValue": false
       },
-      "bronze_lakehouse": {
+      "table_name": {
         "type": "string",
-        "defaultValue": "abfss://0d3ad52f-64d5-4aa9-9da2-3a326f988d8f@onelake.dfs.fabric.microsoft.com/6acc47f3-3745-4fc2-9ac2-52ad2d91c117"
-      },
-      "storage_account_url": {
-        "type": "string",
-        "defaultValue": "https://amlbelgianjour5911901849.blob.core.windows.net/"
-      },
-      "update_blobs": {
-        "type": "bool",
-        "defaultValue": false
+        "defaultValue": "belgian-journal"
       }
     }
   }

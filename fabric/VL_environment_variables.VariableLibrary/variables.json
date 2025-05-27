@@ -12,6 +12,12 @@
       "note": "",
       "type": "Boolean",
       "value": false
+    },
+    {
+      "name": "temp",
+      "note": "",
+      "type": "Boolean",
+      "value": true
     }
   ]
 }

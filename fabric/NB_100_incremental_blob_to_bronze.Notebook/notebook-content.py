@@ -17,6 +17,7 @@
 
 # CELL ********************
 
+import base64
 import time
 import json
 from datetime import datetime
@@ -26,6 +27,7 @@ import asyncio
 import pandas as pd
 import pyarrow as pa
 import requests
+import sempy.fabric as fabric
 from azure.core.credentials import AccessToken
 from azure.storage.blob import BlobServiceClient
 from azure.storage.blob.aio import BlobServiceClient as AsyncBlobServiceClient
@@ -46,10 +48,13 @@ from tqdm import tqdm
 
 # PARAMETERS CELL ********************
 
-storage_account_url = "https://amlbelgianjour5911901849.blob.core.windows.net/"
-bronze_lakehouse = "abfss://0d3ad52f-64d5-4aa9-9da2-3a326f988d8f@onelake.dfs.fabric.microsoft.com/6acc47f3-3745-4fc2-9ac2-52ad2d91c117"
-table_path = f"{bronze_lakehouse}/Tables/belgian-journal"
-update_blobs = False
+bronze_lakehouse = notebookutils.lakehouse.get("LH_bronze").properties["abfsPath"]
+table_name = "belgian-journal"
+table_path = f"{bronze_lakehouse}/Tables/{table_name}"
+
+variables = notebookutils.variableLibrary.getVariables("VL_environment_variables")
+storage_account_url = variables.storage_account_url
+update_blobs = variables.update_blobs
 
 # METADATA ********************
 
