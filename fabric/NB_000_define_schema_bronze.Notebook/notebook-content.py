@@ -101,7 +101,7 @@ lakehouse_id = notebookutils.lakehouse.get("LH_bronze").id
 base_url = f"https://onelake.dfs.fabric.microsoft.com/{workspace_id}/{lakehouse_id}/Files/huggingface"
 
 hf_repo_id = "guust-franssens/belgian-journal"
-hf_api_url = f"https://huggingface.co/api/datasets/{repo_id}/tree/main/data"
+hf_api_url = f"https://huggingface.co/api/datasets/{hf_repo_id}/tree/main/data"
 
 with requests.Session() as session:
     response = session.get(hf_api_url)
