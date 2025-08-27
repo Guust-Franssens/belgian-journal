@@ -4,8 +4,7 @@
 
 # META {
 # META   "kernel_info": {
-# META     "name": "jupyter",
-# META     "jupyter_kernel_name": "python3.11"
+# META     "name": "synapse_pyspark"
 # META   },
 # META   "dependencies": {}
 # META }
@@ -39,7 +38,7 @@ from tqdm import tqdm
 
 # META {
 # META   "language": "python",
-# META   "language_group": "jupyter_python"
+# META   "language_group": "synapse_pyspark"
 # META }
 
 # MARKDOWN ********************
@@ -49,7 +48,7 @@ from tqdm import tqdm
 # PARAMETERS CELL ********************
 
 bronze_lakehouse = notebookutils.lakehouse.get("LH_bronze").properties["abfsPath"]
-table_name = "belgian-journal"
+table_name = "belgian_journal_staging"
 table_path = f"{bronze_lakehouse}/Tables/{table_name}"
 
 variables = notebookutils.variableLibrary.getVariables("VL_environment_variables")
@@ -60,7 +59,7 @@ update_blobs = variables.update_blobs
 
 # META {
 # META   "language": "python",
-# META   "language_group": "jupyter_python"
+# META   "language_group": "synapse_pyspark"
 # META }
 
 # MARKDOWN ********************
@@ -89,7 +88,7 @@ credential = TokenCredential()
 
 # META {
 # META   "language": "python",
-# META   "language_group": "jupyter_python"
+# META   "language_group": "synapse_pyspark"
 # META }
 
 # MARKDOWN ********************
@@ -105,7 +104,7 @@ async_container_client = async_blob_service_client.get_container_client("belgian
 
 # META {
 # META   "language": "python",
-# META   "language_group": "jupyter_python"
+# META   "language_group": "synapse_pyspark"
 # META }
 
 # CELL ********************
@@ -134,12 +133,12 @@ if tasks:
 
 # META {
 # META   "language": "python",
-# META   "language_group": "jupyter_python"
+# META   "language_group": "synapse_pyspark"
 # META }
 
 # MARKDOWN ********************
 
-# ## Incrementally ingest into lakehouse
+# ## Ingest into lakehouse
 
 # CELL ********************
 
@@ -151,7 +150,7 @@ columns = [field.name for field in dt.schema().fields]
 
 # META {
 # META   "language": "python",
-# META   "language_group": "jupyter_python"
+# META   "language_group": "synapse_pyspark"
 # META }
 
 # CELL ********************
@@ -163,7 +162,7 @@ df.head()
 
 # META {
 # META   "language": "python",
-# META   "language_group": "jupyter_python"
+# META   "language_group": "synapse_pyspark"
 # META }
 
 # CELL ********************
@@ -174,19 +173,30 @@ df.publication_date.min()
 
 # META {
 # META   "language": "python",
-# META   "language_group": "jupyter_python"
+# META   "language_group": "synapse_pyspark"
 # META }
 
 # CELL ********************
 
 storage_options = {"bearer_token": notebookutils.credentials.getToken("storage"), "use_fabric_endpoint": "true"}
-write_deltalake(table_path, df, mode='append', schema_mode=None, engine='rust', storage_options=storage_options)
+write_deltalake(table_path, df, mode='overwrite', schema_mode=None, engine='rust', storage_options=storage_options)
 
 # METADATA ********************
 
 # META {
 # META   "language": "python",
-# META   "language_group": "jupyter_python"
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
+dt.vacuum()
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
 # META }
 
 # MARKDOWN ********************
@@ -219,7 +229,7 @@ if tasks:
 
 # META {
 # META   "language": "python",
-# META   "language_group": "jupyter_python"
+# META   "language_group": "synapse_pyspark"
 # META }
 
 # CELL ********************
@@ -233,5 +243,5 @@ len(blobs)
 
 # META {
 # META   "language": "python",
-# META   "language_group": "jupyter_python"
+# META   "language_group": "synapse_pyspark"
 # META }

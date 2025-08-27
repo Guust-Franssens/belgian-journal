@@ -1,0 +1,35 @@
+{
+  "Runtime": "PYTHON",
+  "FunctionsMetadata": [
+    {
+      "Name": "get_publication_metadata",
+      "ScriptFile": "function_app.py",
+      "Bindings": [
+        {
+          "Methods": [
+            "POST"
+          ],
+          "Route": "",
+          "AuthLevel": "Anonymous",
+          "Name": "req",
+          "Direction": "In",
+          "Type": "HttpTrigger"
+        }
+      ],
+      "FabricProperties": {
+        "fabricFunctionParameters": [
+          {
+            "dataType": "str",
+            "name": "vat"
+          },
+          {
+            "dataType": "str",
+            "name": "publicationNumber"
+          }
+        ],
+        "fabricFunctionReturnType": "dict",
+        "fabricMetadataSchemaVersion": null
+      }
+    }
+  ]
+}

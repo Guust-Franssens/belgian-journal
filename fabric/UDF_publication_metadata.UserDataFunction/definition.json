@@ -1,0 +1,32 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/userDataFunction/definition/1.1.0/schema.json",
+  "runtime": "PYTHON",
+  "connectedDataSources": [],
+  "functions": [
+    {
+      "name": "get_publication_metadata",
+      "description": "",
+      "isPublicEndpointEnabled": true
+    }
+  ],
+  "libraries": {
+    "public": [
+      {
+        "name": "beautifulsoup4",
+        "type": "PYPI",
+        "version": "4.13.4"
+      },
+      {
+        "name": "fabric-user-data-functions",
+        "type": "PYPI",
+        "version": "0.2.32rc0"
+      },
+      {
+        "name": "requests",
+        "type": "PYPI",
+        "version": "2.32.4"
+      }
+    ],
+    "private": []
+  }
+}
