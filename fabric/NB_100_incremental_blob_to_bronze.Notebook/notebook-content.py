@@ -62,7 +62,7 @@ table_name = "belgian_journal"
 bronze_lakehouse = notebookutils.lakehouse.get("LH_bronze").properties["abfsPath"]
 table_path = f"{bronze_lakehouse}/Tables/{table_name}_staging"
 
-variables = notebookutils.variableLibrary.getVariables("VL_environment_variables")
+variables = notebookutils.variableLibrary.getLibrary("VL_environment_variables")
 storage_account_url = variables.storage_account_url
 update_blobs = variables.update_blobs
 
