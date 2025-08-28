@@ -32,13 +32,13 @@ from tqdm import tqdm
 # META   "language_group": "jupyter_python"
 # META }
 
+# MARKDOWN ********************
+
+# ## Parameters
+
 # PARAMETERS CELL ********************
 
-workspaceId = notebookutils.runtime.context["currentWorkspaceId"]
-silver_lakehouse = notebookutils.lakehouse.get("LH_silver").properties["abfsPath"]
-table_name = "belgian-journal"
-table_path = f"{silver_lakehouse}/Tables/{table_name}"
-table_path_updates = f"{silver_lakehouse}/Tables/{table_name}-updates"
+table_name = "belgian_journal"
 
 
 # METADATA ********************
@@ -47,6 +47,25 @@ table_path_updates = f"{silver_lakehouse}/Tables/{table_name}-updates"
 # META   "language": "python",
 # META   "language_group": "jupyter_python"
 # META }
+
+# CELL ********************
+
+workspaceId = notebookutils.runtime.context["currentWorkspaceId"]
+silver_lakehouse = notebookutils.lakehouse.get("LH_silver").properties["abfsPath"]
+table_path = f"{silver_lakehouse}/Tables/{table_name}"
+table_path_staging = f"{silver_lakehouse}/Tables/{table_name}_staging"
+
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "jupyter_python"
+# META }
+
+# MARKDOWN ********************
+
+# ## Define User-Data-Function (UDF)
 
 # CELL ********************
 
@@ -140,7 +159,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
 storage_options = {"bearer_token": notebookutils.credentials.getToken("storage"), "use_fabric_endpoint": "true"}
 mask = (df["company_juridical_form"].notna()) & (df["act_description"].notna()) & (df["address"].notna())
 write_deltalake(
-    table_or_uri=table_path_updates, 
+    table_or_uri=table_path_staging, 
     data=df[mask],
     schema=dt.schema(),
     mode="overwrite",

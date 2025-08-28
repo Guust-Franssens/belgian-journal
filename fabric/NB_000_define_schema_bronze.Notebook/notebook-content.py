@@ -36,14 +36,23 @@ from pyspark.sql.types import StructType, StructField, StringType, DateType, Boo
 
 # MARKDOWN ********************
 
-# ## Defining the schema
-# Defining the schema upfront to ensure data quality.
+# ## Parameters
 
 # PARAMETERS CELL ********************
 
+table_name = "belgian_journal"
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
+
 bronze_lh = notebookutils.lakehouse.get("LH_bronze").properties["abfsPath"]
 silver_lh = notebookutils.lakehouse.get("LH_silver").properties["abfsPath"]
-table_name = "belgian_journal"
 bronze_table = f"{bronze_lh}/Tables/{table_name}"
 bronze_staging = f"{bronze_table}_staging"
 silver_table = f"{silver_lh}/Tables/{table_name}"
@@ -55,6 +64,11 @@ silver_staging = f"{silver_table}_staging"
 # META   "language": "python",
 # META   "language_group": "synapse_pyspark"
 # META }
+
+# MARKDOWN ********************
+
+# ## Defining the schema
+# Defining the schema upfront to ensure data quality.
 
 # CELL ********************
 

@@ -24,11 +24,25 @@ from delta.tables import DeltaTable
 # META   "language_group": "synapse_pyspark"
 # META }
 
+# MARKDOWN ********************
+
+# ## Parameters
+
+# PARAMETERS CELL ********************
+
+table_name = "belgian_journal"
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
 # CELL ********************
 
 silver_lakehouse = notebookutils.lakehouse.get("LH_silver").properties["abfsPath"]
-table_name = "belgian-journal"
-updates_table_name = f"{table_name}-updates"
+updates_table_name = f"{table_name}_staging"
 silver_table_path = f"{silver_lakehouse}/Tables/{table_name}"
 updates_table_path = f"{silver_lakehouse}/Tables/{updates_table_name}"
 
@@ -40,20 +54,15 @@ updates_table_path = f"{silver_lakehouse}/Tables/{updates_table_name}"
 # META   "language_group": "synapse_pyspark"
 # META }
 
+# MARKDOWN ********************
+
+# ## Read in updates and merge (update) to silver
+
 # CELL ********************
 
 df_updates = spark.read.format("delta").load(updates_table_path)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "synapse_pyspark"
-# META }
-
-# CELL ********************
-
 silver_table = DeltaTable.forPath(spark, silver_table_path)
+
 
 # METADATA ********************
 

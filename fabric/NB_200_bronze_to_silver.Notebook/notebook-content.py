@@ -32,11 +32,26 @@ spark.conf.set('spark.sql.parquet.vorder.default', 'false')
 # META   "language_group": "synapse_pyspark"
 # META }
 
+# MARKDOWN ********************
+
+# ## Parameters
+
 # PARAMETERS CELL ********************
+
+table_name = "belgian-journal"
+
+
+# METADATA ********************
+
+# META {
+# META   "language": "python",
+# META   "language_group": "synapse_pyspark"
+# META }
+
+# CELL ********************
 
 bronze_lakehouse = notebookutils.lakehouse.get("LH_bronze").properties["abfsPath"]
 silver_lakehouse = notebookutils.lakehouse.get("LH_silver").properties["abfsPath"]
-table_name = "belgian-journal"
 bronze_table_path = f"{bronze_lakehouse}/Tables/{table_name}"
 silver_table_path = f"{silver_lakehouse}/Tables/{table_name}"
 
@@ -46,6 +61,10 @@ silver_table_path = f"{silver_lakehouse}/Tables/{table_name}"
 # META   "language": "python",
 # META   "language_group": "synapse_pyspark"
 # META }
+
+# MARKDOWN ********************
+
+# ## Read latest changes from bronze and merge (insert) into silver table
 
 # CELL ********************
 
