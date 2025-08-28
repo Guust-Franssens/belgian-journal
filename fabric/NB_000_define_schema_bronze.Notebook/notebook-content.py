@@ -107,7 +107,7 @@ with requests.Session() as session:
     response = session.get(hf_api_url)
     response.raise_for_status()
     files = [
-        f"https://huggingface.co/datasets/{repo_id}/resolve/main/{f['path']}" 
+        f"https://huggingface.co/datasets/{hf_repo_id}/resolve/main/{f['path']}" 
         for f in response.json() if f["path"].endswith(".parquet")
     ]
     
