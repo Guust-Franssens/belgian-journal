@@ -4,7 +4,8 @@
 
 # META {
 # META   "kernel_info": {
-# META     "name": "synapse_pyspark"
+# META     "name": "jupyter",
+# META     "jupyter_kernel_name": "python3.11"
 # META   },
 # META   "dependencies": {}
 # META }
@@ -38,7 +39,7 @@ from tqdm import tqdm
 
 # META {
 # META   "language": "python",
-# META   "language_group": "synapse_pyspark"
+# META   "language_group": "jupyter_python"
 # META }
 
 # MARKDOWN ********************
@@ -59,7 +60,7 @@ update_blobs = variables.update_blobs
 
 # META {
 # META   "language": "python",
-# META   "language_group": "synapse_pyspark"
+# META   "language_group": "jupyter_python"
 # META }
 
 # MARKDOWN ********************
@@ -88,7 +89,7 @@ credential = TokenCredential()
 
 # META {
 # META   "language": "python",
-# META   "language_group": "synapse_pyspark"
+# META   "language_group": "jupyter_python"
 # META }
 
 # MARKDOWN ********************
@@ -104,7 +105,7 @@ async_container_client = async_blob_service_client.get_container_client("belgian
 
 # META {
 # META   "language": "python",
-# META   "language_group": "synapse_pyspark"
+# META   "language_group": "jupyter_python"
 # META }
 
 # CELL ********************
@@ -133,7 +134,7 @@ if tasks:
 
 # META {
 # META   "language": "python",
-# META   "language_group": "synapse_pyspark"
+# META   "language_group": "jupyter_python"
 # META }
 
 # MARKDOWN ********************
@@ -150,7 +151,7 @@ columns = [field.name for field in dt.schema().fields]
 
 # META {
 # META   "language": "python",
-# META   "language_group": "synapse_pyspark"
+# META   "language_group": "jupyter_python"
 # META }
 
 # CELL ********************
@@ -162,7 +163,7 @@ df.head()
 
 # META {
 # META   "language": "python",
-# META   "language_group": "synapse_pyspark"
+# META   "language_group": "jupyter_python"
 # META }
 
 # CELL ********************
@@ -173,7 +174,7 @@ df.publication_date.min()
 
 # META {
 # META   "language": "python",
-# META   "language_group": "synapse_pyspark"
+# META   "language_group": "jupyter_python"
 # META }
 
 # CELL ********************
@@ -185,7 +186,7 @@ write_deltalake(table_path, df, mode='overwrite', schema_mode=None, engine='rust
 
 # META {
 # META   "language": "python",
-# META   "language_group": "synapse_pyspark"
+# META   "language_group": "jupyter_python"
 # META }
 
 # CELL ********************
@@ -196,7 +197,7 @@ dt.vacuum()
 
 # META {
 # META   "language": "python",
-# META   "language_group": "synapse_pyspark"
+# META   "language_group": "jupyter_python"
 # META }
 
 # MARKDOWN ********************
@@ -229,7 +230,7 @@ if tasks:
 
 # META {
 # META   "language": "python",
-# META   "language_group": "synapse_pyspark"
+# META   "language_group": "jupyter_python"
 # META }
 
 # CELL ********************
@@ -243,5 +244,5 @@ len(blobs)
 
 # META {
 # META   "language": "python",
-# META   "language_group": "synapse_pyspark"
+# META   "language_group": "jupyter_python"
 # META }
