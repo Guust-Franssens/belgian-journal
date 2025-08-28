@@ -208,7 +208,7 @@
       },
       "table_name": {
         "type": "string",
-        "defaultValue": "belgian-journal"
+        "defaultValue": "belgian_journal"
       }
     }
   }
