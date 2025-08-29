@@ -38,7 +38,7 @@ spark.conf.set('spark.sql.parquet.vorder.default', 'false')
 
 # PARAMETERS CELL ********************
 
-table_name = "belgian-journal"
+table_name = "belgian_journal"
 
 
 # METADATA ********************
