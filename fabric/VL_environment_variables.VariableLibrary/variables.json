@@ -12,6 +12,12 @@
       "note": "",
       "type": "Boolean",
       "value": false
+    },
+    {
+      "name": "key_vault_url",
+      "note": "",
+      "type": "String",
+      "value": "https://kv-fabric-belux.vault.azure.net/"
     }
   ]
 }
