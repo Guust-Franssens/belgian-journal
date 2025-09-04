@@ -26,6 +26,9 @@ import requests
 from datasets import load_dataset
 from pyspark.sql.types import StructType, StructField, StringType, DateType, BooleanType
 
+# https://milescole.dev/data-engineering/2024/09/17/To-V-Order-or-Not.html
+spark.conf.set('spark.sql.parquet.vorder.default', 'false')
+
 
 # METADATA ********************
 
