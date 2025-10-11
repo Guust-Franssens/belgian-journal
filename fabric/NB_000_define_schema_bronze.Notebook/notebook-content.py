@@ -16,10 +16,7 @@
 
 # CELL ********************
 
-import tempfile
-import os
 from pathlib import Path
-from io import BytesIO
 from tqdm import tqdm
 
 import requests
@@ -28,6 +25,11 @@ from pyspark.sql.types import StructType, StructField, StringType, DateType, Boo
 
 # https://milescole.dev/data-engineering/2024/09/17/To-V-Order-or-Not.html
 spark.conf.set('spark.sql.parquet.vorder.default', 'false')
+
+# https://blog.fabric.microsoft.com/en-us/blog/announcing-optimized-compaction-in-fabric-spark/
+spark.conf.set('spark.databricks.delta.autoCompact.enabled', True)
+spark.conf.set('spark.microsoft.delta.optimize.fast.enabled', True)
+spark.conf.set('spark.microsoft.delta.optimize.fileLevelTarget.enabled', True)
 
 
 # METADATA ********************
