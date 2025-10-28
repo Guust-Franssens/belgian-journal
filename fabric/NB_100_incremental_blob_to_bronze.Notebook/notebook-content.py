@@ -157,6 +157,7 @@ storage_options = {"bearer_token": notebookutils.credentials.getToken('storage')
 dt = DeltaTable(table_path, storage_options=storage_options)
 columns = [field.name for field in dt.schema().fields]
 
+
 # METADATA ********************
 
 # META {
@@ -166,7 +167,12 @@ columns = [field.name for field in dt.schema().fields]
 
 # CELL ********************
 
+# ensure correct dtypes for date and potential null columns
 df = pd.DataFrame(publications.values(), columns=columns)
+df["publication_date"] = pd.to_datetime(df["publication_date"], format="%Y-%m-%d").dt.date
+df["street"] = df["street"].astype("string")
+df["zipcode"] = df["zipcode"].astype("string")
+df["city"] = df["city"].astype("string")
 df.head()
 
 # METADATA ********************
@@ -191,16 +197,6 @@ df.publication_date.min()
 
 storage_options = {"bearer_token": notebookutils.credentials.getToken("storage"), "use_fabric_endpoint": "true"}
 write_deltalake(table_path, df, mode='overwrite', schema_mode=None, engine='rust', storage_options=storage_options)
-
-# METADATA ********************
-
-# META {
-# META   "language": "python",
-# META   "language_group": "jupyter_python"
-# META }
-
-# CELL ********************
-
 dt.vacuum()
 
 # METADATA ********************
