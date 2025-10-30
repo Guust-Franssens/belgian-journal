@@ -39,7 +39,7 @@ from tqdm import tqdm
 # PARAMETERS CELL ********************
 
 table_name = "belgian_journal"
-
+max_updates_per_run = 10_000
 
 # METADATA ********************
 
@@ -97,7 +97,7 @@ filter_expression = (
     ds.field("address").is_null()
 )
 df = dt.to_pyarrow_dataset().scanner(filter=filter_expression).to_table().to_pandas(date_as_object=False)
-df = df[df["publication_date"] <= datetime.now() - timedelta(days=7)]
+df = df[df["publication_date"] <= datetime.now() - timedelta(days=7)].iloc[:max_updates_per_run]
 
 # METADATA ********************
 
