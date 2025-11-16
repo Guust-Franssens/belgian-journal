@@ -1,34 +1,34 @@
 {
-  "Runtime": "PYTHON",
-  "FunctionsMetadata": [
+  "runtime": "PYTHON",
+  "functionsMetadata": [
     {
-      "Name": "get_publication_metadata",
-      "ScriptFile": "function_app.py",
-      "Bindings": [
+      "name": "get_publication_metadata",
+      "scriptFile": "function_app.py",
+      "bindings": [
         {
-          "Methods": [
+          "name": "req",
+          "type": "HttpTrigger",
+          "direction": "In",
+          "authLevel": "Anonymous",
+          "methods": [
             "POST"
           ],
-          "Route": "",
-          "AuthLevel": "Anonymous",
-          "Name": "req",
-          "Direction": "In",
-          "Type": "HttpTrigger"
+          "route": ""
         }
       ],
-      "FabricProperties": {
+      "fabricProperties": {
+        "fabricMetadataSchemaVersion": null,
+        "fabricFunctionReturnType": "dict",
         "fabricFunctionParameters": [
           {
-            "dataType": "str",
-            "name": "vat"
+            "name": "vat",
+            "dataType": "str"
           },
           {
-            "dataType": "str",
-            "name": "publicationNumber"
+            "name": "publicationNumber",
+            "dataType": "str"
           }
-        ],
-        "fabricFunctionReturnType": "dict",
-        "fabricMetadataSchemaVersion": null
+        ]
       }
     }
   ]
