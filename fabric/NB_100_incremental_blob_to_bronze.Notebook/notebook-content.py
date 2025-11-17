@@ -20,16 +20,11 @@
 import base64
 import time
 import json
-from datetime import datetime
-from pathlib import Path
 
 import asyncio
 import pandas as pd
-import pyarrow as pa
 import requests
-import sempy.fabric as fabric
 from azure.core.credentials import AccessToken
-from azure.storage.blob import BlobServiceClient
 from azure.storage.blob.aio import BlobServiceClient as AsyncBlobServiceClient
 from deltalake import DeltaTable, write_deltalake
 from tqdm import tqdm
