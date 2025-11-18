@@ -57,43 +57,14 @@ table_name = "belgian_journal"
 bronze_lakehouse = notebookutils.lakehouse.get("LH_bronze").properties["abfsPath"]
 table_path = f"{bronze_lakehouse}/Tables/{table_name}_staging"
 
-try:
-    variables = notebookutils.variableLibrary.getLibrary("VL_environment_variables")
-    storage_account_url = variables.storage_account_url
-    update_blobs = variables.update_blobs
-except:
-    # bunch of code as notebookutils.variableLibrary.getLibrary currently doesn't work when the notebook is triggered from a pipeline?
-    workspace_id = notebookutils.runtime.context["currentWorkspaceId"]
-    url = f"https://api.fabric.microsoft.com/v1/workspaces/{workspace_id}/VariableLibraries"
-    headers = {"Authorization": f"Bearer {notebookutils.credentials.getToken('pbi')}"}
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-    data = response.json()["value"][0]
-    vl_id = data["id"]
-    vl_active_value_set_name = data["properties"]["activeValueSetName"]
-    vl_id, vl_active_value_set_name
+variables = notebookutils.variableLibrary.getLibrary("VL_environment_variables")
+storage_account_url = variables.storage_account_url
+update_blobs = variables.update_blobs
 
-    url = f"https://api.fabric.microsoft.com/v1/workspaces/{workspace_id}/VariableLibraries/{vl_id}/getDefinition"
-    response = requests.post(url, headers=headers)
-    response.raise_for_status()
-    if response.status_code == 202:
-        sleep_time = int(response.headers["Retry-After"])
-        print(f"sleeping for {sleep_time} seconds")
-        time.sleep(sleep_time)
-        response = requests.get(response.headers["Location"], headers=headers)
-        response.raise_for_status()
-        response = requests.get(response.headers["Location"], headers=headers)
-        response.raise_for_status()
+print(f"Table path: {table_path}")
+print(f"Storage Account URL: {storage_account_url}")
+print(f"Update BLOBs: {update_blobs}")
 
-    parts = response.json()["definition"]["parts"]
-    for part in parts:
-        part["payload"] = json.loads(base64.b64decode(part["payload"]))
-    variable_sets = {part["path"]: part["payload"] for part in parts}
-    variables = {var["name"]: var["value"] for var in variable_sets.get("variables.json").get("variables", [])}
-    variables.update({var["name"]: var["value"] for var in variable_sets.get(f"valueSets/{vl_active_value_set_name}.json", {}).get("variableOverrides", [])})
-
-    storage_account_url = variables.get("storage_account_url")
-    update_blobs = variables.get("update_blobs")
 
 # METADATA ********************
 
